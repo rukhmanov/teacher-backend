@@ -30,12 +30,7 @@ export class TeachersController {
     return this.teachersService.getAllTeachers();
   }
 
-  @Get(':username')
-  async getPublicProfile(@Param('username') username: string) {
-    return this.teachersService.getPublicProfile(username);
-  }
-
-  // Protected endpoints (own profile)
+  // Protected endpoints (own profile) - MUST come before :username routes
   @UseGuards(JwtAuthGuard)
   @Get('me/profile')
   async getOwnProfile(@Request() req) {
@@ -51,17 +46,58 @@ export class TeachersController {
     return this.teachersService.updateProfile(req.user.id, updateDto);
   }
 
-  // Posts
-  @Get(':username/posts')
-  async getPosts(@Param('username') username: string) {
-    const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getPosts(profile.id);
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('me/posts')
   async getOwnPosts(@Request() req) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getPosts(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/master-classes')
+  async getOwnMasterClasses(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getMasterClasses(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/presentations')
+  async getOwnPresentations(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getPresentations(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/parents')
+  async getOwnParentSections(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getParentSections(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/life')
+  async getOwnLifeInDOU(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getLifeInDOU(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/social-links')
+  async getOwnSocialLinks(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getSocialLinks(profile.id);
+  }
+
+  // Public profile routes (with :username parameter)
+  @Get(':username')
+  async getPublicProfile(@Param('username') username: string) {
+    return this.teachersService.getPublicProfile(username);
+  }
+
+  // Posts
+  @Get(':username/posts')
+  async getPosts(@Param('username') username: string) {
+    const profile = await this.teachersService.getPublicProfile(username);
     return this.teachersService.getPosts(profile.id);
   }
 
@@ -94,13 +130,6 @@ export class TeachersController {
   @Get(':username/master-classes')
   async getMasterClasses(@Param('username') username: string) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getMasterClasses(profile.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me/master-classes')
-  async getOwnMasterClasses(@Request() req) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.getMasterClasses(profile.id);
   }
 
@@ -143,13 +172,6 @@ export class TeachersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('me/presentations')
-  async getOwnPresentations(@Request() req) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getPresentations(profile.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Post('me/presentations')
   async createPresentation(
     @Request() req,
@@ -184,13 +206,6 @@ export class TeachersController {
   @Get(':username/parents')
   async getParentSections(@Param('username') username: string) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getParentSections(profile.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me/parents')
-  async getOwnParentSections(@Request() req) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.getParentSections(profile.id);
   }
 
@@ -233,13 +248,6 @@ export class TeachersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('me/life')
-  async getOwnLifeInDOU(@Request() req) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getLifeInDOU(profile.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Post('me/life')
   async createLifeInDOU(
     @Request() req,
@@ -274,13 +282,6 @@ export class TeachersController {
   @Get(':username/social-links')
   async getSocialLinks(@Param('username') username: string) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getSocialLinks(profile.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me/social-links')
-  async getOwnSocialLinks(@Request() req) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.getSocialLinks(profile.id);
   }
 

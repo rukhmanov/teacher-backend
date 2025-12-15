@@ -18,10 +18,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    if (!payload || !payload.sub) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
     const user = await this.usersService.findOne(payload.sub);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('User not found or inactive');
     }
-    return { id: user.id, email: user.email, role: user.role, username: user.username };
+    return { 
+      id: user.id, 
+      email: user.email, 
+      role: user.role, 
+      username: user.username 
+    };
   }
 }

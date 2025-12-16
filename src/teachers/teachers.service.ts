@@ -380,5 +380,54 @@ export class TeachersService {
       relations: ['user', 'socialLinks'],
     });
   }
+
+  // Delete profile and all related data
+  async deleteProfile(userId: string): Promise<void> {
+    const profile = await this.getOwnProfile(userId);
+    const profileId = profile.id;
+
+    // Delete all related data
+    // Delete posts
+    const posts = await this.postRepository.find({ where: { teacherId: profileId } });
+    if (posts.length > 0) {
+      await this.postRepository.remove(posts);
+    }
+
+    // Delete master classes
+    const masterClasses = await this.masterClassRepository.find({ where: { teacherId: profileId } });
+    if (masterClasses.length > 0) {
+      await this.masterClassRepository.remove(masterClasses);
+    }
+
+    // Delete presentations
+    const presentations = await this.presentationRepository.find({ where: { teacherId: profileId } });
+    if (presentations.length > 0) {
+      await this.presentationRepository.remove(presentations);
+    }
+
+    // Delete parent sections
+    const parentSections = await this.parentSectionRepository.find({ where: { teacherId: profileId } });
+    if (parentSections.length > 0) {
+      await this.parentSectionRepository.remove(parentSections);
+    }
+
+    // Delete life in DOU
+    const lifeInDOU = await this.lifeInDOURepository.find({ where: { teacherId: profileId } });
+    if (lifeInDOU.length > 0) {
+      await this.lifeInDOURepository.remove(lifeInDOU);
+    }
+
+    // Delete social links
+    const socialLinks = await this.socialLinkRepository.find({ where: { teacherId: profileId } });
+    if (socialLinks.length > 0) {
+      await this.socialLinkRepository.remove(socialLinks);
+    }
+
+    // Delete profile
+    await this.teacherProfileRepository.remove(profile);
+
+    // Delete user account
+    await this.usersService.delete(userId);
+  }
 }
 

@@ -47,6 +47,13 @@ export class TeachersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Delete('me/profile')
+  async deleteProfile(@Request() req) {
+    await this.teachersService.deleteProfile(req.user.id);
+    return { message: 'Profile deleted successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me/posts')
   async getOwnPosts(@Request() req) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);

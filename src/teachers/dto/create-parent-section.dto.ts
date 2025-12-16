@@ -11,5 +11,13 @@ export class CreateParentSectionDto {
   @IsOptional()
   @IsArray()
   files?: string[];
+
+  @IsOptional()
+  @IsString()
+  cardColor?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImage?: string;
 }
 

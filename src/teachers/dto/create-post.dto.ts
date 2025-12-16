@@ -14,5 +14,13 @@ export class CreatePostDto {
   @IsOptional()
   @IsArray()
   videos?: string[];
+
+  @IsOptional()
+  @IsString()
+  cardColor?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImage?: string;
 }
 

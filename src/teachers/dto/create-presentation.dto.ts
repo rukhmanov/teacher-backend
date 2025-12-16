@@ -14,5 +14,13 @@ export class CreatePresentationDto {
   @IsOptional()
   @IsString()
   previewImage?: string;
+
+  @IsOptional()
+  @IsString()
+  cardColor?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImage?: string;
 }
 

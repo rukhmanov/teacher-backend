@@ -20,6 +20,7 @@ import { CreateParentSectionDto } from './dto/create-parent-section.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
 import { UsersService } from '../users/users.service';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class TeachersService {
@@ -39,6 +40,7 @@ export class TeachersService {
     @InjectRepository(SocialLink)
     private socialLinkRepository: Repository<SocialLink>,
     private usersService: UsersService,
+    private uploadService: UploadService,
   ) {}
 
   async getPublicProfile(username: string): Promise<TeacherProfile> {
@@ -119,6 +121,27 @@ export class TeachersService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+
+    // Удаляем все связанные файлы
+    const filesToDelete: string[] = [];
+    
+    if (post.images && post.images.length > 0) {
+      filesToDelete.push(...post.images);
+    }
+    
+    if (post.videos && post.videos.length > 0) {
+      filesToDelete.push(...post.videos);
+    }
+    
+    if (post.coverImage) {
+      filesToDelete.push(post.coverImage);
+    }
+
+    // Удаляем файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
     await this.postRepository.remove(post);
   }
 
@@ -163,6 +186,27 @@ export class TeachersService {
     if (!masterClass) {
       throw new NotFoundException('Master class not found');
     }
+
+    // Удаляем все связанные файлы
+    const filesToDelete: string[] = [];
+    
+    if (masterClass.images && masterClass.images.length > 0) {
+      filesToDelete.push(...masterClass.images);
+    }
+    
+    if (masterClass.videos && masterClass.videos.length > 0) {
+      filesToDelete.push(...masterClass.videos);
+    }
+    
+    if (masterClass.coverImage) {
+      filesToDelete.push(masterClass.coverImage);
+    }
+
+    // Удаляем файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
     await this.masterClassRepository.remove(masterClass);
   }
 
@@ -207,6 +251,27 @@ export class TeachersService {
     if (!presentation) {
       throw new NotFoundException('Presentation not found');
     }
+
+    // Удаляем все связанные файлы
+    const filesToDelete: string[] = [];
+    
+    if (presentation.fileUrl) {
+      filesToDelete.push(presentation.fileUrl);
+    }
+    
+    if (presentation.previewImage) {
+      filesToDelete.push(presentation.previewImage);
+    }
+    
+    if (presentation.coverImage) {
+      filesToDelete.push(presentation.coverImage);
+    }
+
+    // Удаляем файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
     await this.presentationRepository.remove(presentation);
   }
 
@@ -251,6 +316,23 @@ export class TeachersService {
     if (!parentSection) {
       throw new NotFoundException('Parent section not found');
     }
+
+    // Удаляем все связанные файлы
+    const filesToDelete: string[] = [];
+    
+    if (parentSection.files && parentSection.files.length > 0) {
+      filesToDelete.push(...parentSection.files);
+    }
+    
+    if (parentSection.coverImage) {
+      filesToDelete.push(parentSection.coverImage);
+    }
+
+    // Удаляем файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
     await this.parentSectionRepository.remove(parentSection);
   }
 
@@ -307,6 +389,9 @@ export class TeachersService {
       throw new NotFoundException('Media item not found');
     }
     
+    // Удаляем файл из хранилища
+    await this.uploadService.deleteFile(mediaUrl);
+    
     // Удаляем медиа элемент по URL
     const filteredItems = lifeInDOU.mediaItems.filter(item => item.url !== mediaUrl);
     
@@ -327,6 +412,19 @@ export class TeachersService {
     if (!lifeInDOU) {
       throw new NotFoundException('Life in DOU not found');
     }
+
+    // Удаляем все медиа файлы
+    const filesToDelete: string[] = [];
+    
+    if (lifeInDOU.mediaItems && lifeInDOU.mediaItems.length > 0) {
+      filesToDelete.push(...lifeInDOU.mediaItems.map(item => item.url));
+    }
+
+    // Удаляем файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
     await this.lifeInDOURepository.remove(lifeInDOU);
   }
 
@@ -386,33 +484,97 @@ export class TeachersService {
     const profile = await this.getOwnProfile(userId);
     const profileId = profile.id;
 
-    // Delete all related data
-    // Delete posts
+    // Собираем все файлы для удаления
+    const filesToDelete: string[] = [];
+
+    // Собираем файлы из постов
     const posts = await this.postRepository.find({ where: { teacherId: profileId } });
+    posts.forEach(post => {
+      if (post.images && post.images.length > 0) {
+        filesToDelete.push(...post.images);
+      }
+      if (post.videos && post.videos.length > 0) {
+        filesToDelete.push(...post.videos);
+      }
+      if (post.coverImage) {
+        filesToDelete.push(post.coverImage);
+      }
+    });
+
+    // Собираем файлы из мастер-классов
+    const masterClasses = await this.masterClassRepository.find({ where: { teacherId: profileId } });
+    masterClasses.forEach(mc => {
+      if (mc.images && mc.images.length > 0) {
+        filesToDelete.push(...mc.images);
+      }
+      if (mc.videos && mc.videos.length > 0) {
+        filesToDelete.push(...mc.videos);
+      }
+      if (mc.coverImage) {
+        filesToDelete.push(mc.coverImage);
+      }
+    });
+
+    // Собираем файлы из презентаций
+    const presentations = await this.presentationRepository.find({ where: { teacherId: profileId } });
+    presentations.forEach(pres => {
+      if (pres.fileUrl) {
+        filesToDelete.push(pres.fileUrl);
+      }
+      if (pres.previewImage) {
+        filesToDelete.push(pres.previewImage);
+      }
+      if (pres.coverImage) {
+        filesToDelete.push(pres.coverImage);
+      }
+    });
+
+    // Собираем файлы из разделов для родителей
+    const parentSections = await this.parentSectionRepository.find({ where: { teacherId: profileId } });
+    parentSections.forEach(ps => {
+      if (ps.files && ps.files.length > 0) {
+        filesToDelete.push(...ps.files);
+      }
+      if (ps.coverImage) {
+        filesToDelete.push(ps.coverImage);
+      }
+    });
+
+    // Собираем файлы из LifeInDOU
+    const lifeInDOU = await this.lifeInDOURepository.find({ where: { teacherId: profileId } });
+    lifeInDOU.forEach(life => {
+      if (life.mediaItems && life.mediaItems.length > 0) {
+        filesToDelete.push(...life.mediaItems.map(item => item.url));
+      }
+    });
+
+    // Удаляем фото профиля
+    if (profile.photoUrl) {
+      filesToDelete.push(profile.photoUrl);
+    }
+
+    // Удаляем все файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
+    // Delete all related data
     if (posts.length > 0) {
       await this.postRepository.remove(posts);
     }
 
-    // Delete master classes
-    const masterClasses = await this.masterClassRepository.find({ where: { teacherId: profileId } });
     if (masterClasses.length > 0) {
       await this.masterClassRepository.remove(masterClasses);
     }
 
-    // Delete presentations
-    const presentations = await this.presentationRepository.find({ where: { teacherId: profileId } });
     if (presentations.length > 0) {
       await this.presentationRepository.remove(presentations);
     }
 
-    // Delete parent sections
-    const parentSections = await this.parentSectionRepository.find({ where: { teacherId: profileId } });
     if (parentSections.length > 0) {
       await this.parentSectionRepository.remove(parentSections);
     }
 
-    // Delete life in DOU
-    const lifeInDOU = await this.lifeInDOURepository.find({ where: { teacherId: profileId } });
     if (lifeInDOU.length > 0) {
       await this.lifeInDOURepository.remove(lifeInDOU);
     }

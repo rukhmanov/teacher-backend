@@ -114,5 +114,11 @@ export class UploadService {
       // Не бросаем ошибку, чтобы не ломать процесс, если файл уже удален
     }
   }
+
+  async deleteMultipleFiles(fileUrls: string[]): Promise<void> {
+    // Удаляем файлы параллельно, но не ждем ошибок
+    const deletePromises = fileUrls.map((url) => this.deleteFile(url));
+    await Promise.allSettled(deletePromises);
+  }
 }
 

@@ -10,6 +10,7 @@ import { ParentSection } from './entities/parent-section.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
 import { UsersModule } from '../users/users.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UsersModule } from '../users/users.module';
       SocialLink,
     ]),
     UsersModule,
+    UploadModule,
   ],
   controllers: [TeachersController],
   providers: [TeachersService],

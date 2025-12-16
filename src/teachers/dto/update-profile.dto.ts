@@ -46,3 +46,4 @@ export class UpdateProfileDto {
   @IsNumber()
   longitude?: number;
 }
+

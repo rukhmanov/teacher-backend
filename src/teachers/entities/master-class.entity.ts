@@ -42,3 +42,4 @@ export class MasterClass {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

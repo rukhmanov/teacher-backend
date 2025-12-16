@@ -4,3 +4,4 @@ export enum SocialPlatform {
   WEBSITE = 'WEBSITE',
   MESSENGER_MAX = 'MESSENGER_MAX',
 }
+

@@ -36,3 +36,4 @@ export class ParentSection {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

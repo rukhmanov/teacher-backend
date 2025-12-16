@@ -46,3 +46,4 @@ export class SocialLink {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

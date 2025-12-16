@@ -12,3 +12,4 @@ export class CreateParentSectionDto {
   @IsArray()
   files?: string[];
 }
+

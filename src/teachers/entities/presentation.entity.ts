@@ -39,3 +39,4 @@ export class Presentation {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

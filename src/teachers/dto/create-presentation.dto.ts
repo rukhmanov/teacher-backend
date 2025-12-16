@@ -15,3 +15,4 @@ export class CreatePresentationDto {
   @IsString()
   previewImage?: string;
 }
+

@@ -26,3 +26,4 @@ export class WhitelistEmail {
   @CreateDateColumn()
   createdAt: Date;
 }
+

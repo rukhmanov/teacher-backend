@@ -44,3 +44,4 @@ export class User {
   @JoinColumn()
   profile: TeacherProfile;
 }
+

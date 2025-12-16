@@ -20,3 +20,4 @@ export class CreateMasterClassDto {
   @IsArray()
   videos?: string[];
 }
+

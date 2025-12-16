@@ -25,3 +25,4 @@ export const getDatabaseConfig = (
     logging: configService.get<string>('NODE_ENV') === 'development',
   };
 };
+

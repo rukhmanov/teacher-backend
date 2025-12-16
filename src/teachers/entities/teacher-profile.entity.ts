@@ -74,3 +74,4 @@ export class TeacherProfile {
   @OneToMany(() => SocialLink, (socialLink) => socialLink.teacher)
   socialLinks: SocialLink[];
 }
+

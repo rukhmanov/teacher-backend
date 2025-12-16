@@ -27,3 +27,4 @@ import { TeacherProfile } from '../teachers/entities/teacher-profile.entity';
   exports: [AuthService],
 })
 export class AuthModule {}
+

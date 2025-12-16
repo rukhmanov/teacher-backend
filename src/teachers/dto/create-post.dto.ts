@@ -15,3 +15,4 @@ export class CreatePostDto {
   @IsArray()
   videos?: string[];
 }
+

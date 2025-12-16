@@ -39,3 +39,4 @@ export class LifeInDOU {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

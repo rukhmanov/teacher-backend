@@ -51,3 +51,4 @@ export class AdminController {
     return this.adminService.removeFromWhitelist(id);
   }
 }
+

@@ -39,3 +39,4 @@ export class Post {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

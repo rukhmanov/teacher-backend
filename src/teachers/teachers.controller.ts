@@ -248,34 +248,23 @@ export class TeachersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('me/life')
-  async createLifeInDOU(
+  @Post('me/life/media')
+  async addMediaToLifeInDOU(
     @Request() req,
-    @Body() createDto: CreateLifeInDOUDto,
+    @Body() mediaItem: { type: 'photo' | 'video'; url: string; caption?: string },
   ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.createLifeInDOU(profile.id, createDto);
+    return this.teachersService.addMediaToLifeInDOU(profile.id, mediaItem);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('me/life/:id')
-  async updateLifeInDOU(
+  @Delete('me/life/media')
+  async removeMediaFromLifeInDOU(
     @Request() req,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDto: CreateLifeInDOUDto,
+    @Body() body: { url: string },
   ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.updateLifeInDOU(id, profile.id, updateDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete('me/life/:id')
-  async deleteLifeInDOU(
-    @Request() req,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.deleteLifeInDOU(id, profile.id);
+    return this.teachersService.removeMediaFromLifeInDOU(profile.id, body.url);
   }
 
   // Social Links

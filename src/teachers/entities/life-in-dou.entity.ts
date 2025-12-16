@@ -21,17 +21,8 @@ export class LifeInDOU {
   @JoinColumn({ name: 'teacherId' })
   teacher: TeacherProfile;
 
-  @Column()
-  title: string;
-
-  @Column({ type: 'text', nullable: true })
-  description: string;
-
-  @Column('simple-array', { nullable: true })
-  photos: string[];
-
-  @Column('simple-array', { nullable: true })
-  videos: string[];
+  @Column('json', { nullable: true })
+  mediaItems: Array<{ type: 'photo' | 'video'; url: string; caption?: string }> | null;
 
   @CreateDateColumn()
   createdAt: Date;

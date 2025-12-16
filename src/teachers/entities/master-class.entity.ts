@@ -36,6 +36,12 @@ export class MasterClass {
   @Column('simple-array', { nullable: true })
   videos: string[];
 
+  @Column({ nullable: true })
+  cardColor: string;
+
+  @Column({ nullable: true })
+  coverImage: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

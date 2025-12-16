@@ -33,6 +33,12 @@ export class Presentation {
   @Column({ nullable: true })
   previewImage: string;
 
+  @Column({ nullable: true })
+  cardColor: string;
+
+  @Column({ nullable: true })
+  coverImage: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

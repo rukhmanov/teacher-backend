@@ -254,37 +254,69 @@ export class TeachersService {
     await this.parentSectionRepository.remove(parentSection);
   }
 
-  // Life in DOU
-  async getLifeInDOU(teacherId: string): Promise<LifeInDOU[]> {
-    return this.lifeInDOURepository.find({
+  // Life in DOU - получаем или создаем один объект для учителя
+  async getLifeInDOU(teacherId: string): Promise<LifeInDOU> {
+    let lifeInDOU = await this.lifeInDOURepository.findOne({
       where: { teacherId },
-      order: { createdAt: 'DESC' },
     });
+    
+    // Если объекта нет, создаем пустой
+    if (!lifeInDOU) {
+      lifeInDOU = this.lifeInDOURepository.create({
+        teacherId,
+        mediaItems: null,
+      });
+      lifeInDOU = await this.lifeInDOURepository.save(lifeInDOU);
+    }
+    
+    return lifeInDOU;
   }
 
-  async createLifeInDOU(
+  async addMediaToLifeInDOU(
     teacherId: string,
-    createDto: CreateLifeInDOUDto,
+    mediaItem: { type: 'photo' | 'video'; url: string; caption?: string },
   ): Promise<LifeInDOU> {
-    const lifeInDOU = this.lifeInDOURepository.create({
-      ...createDto,
-      teacherId,
+    let lifeInDOU = await this.lifeInDOURepository.findOne({
+      where: { teacherId },
     });
+    
+    // Если объекта нет, создаем новый
+    if (!lifeInDOU) {
+      lifeInDOU = this.lifeInDOURepository.create({
+        teacherId,
+        mediaItems: [mediaItem],
+      });
+    } else {
+      // Добавляем новый медиа элемент к существующим
+      const existingItems = lifeInDOU.mediaItems || [];
+      lifeInDOU.mediaItems = [...existingItems, mediaItem];
+    }
+    
     return this.lifeInDOURepository.save(lifeInDOU);
   }
 
-  async updateLifeInDOU(
-    id: string,
+  async removeMediaFromLifeInDOU(
     teacherId: string,
-    updateDto: Partial<CreateLifeInDOUDto>,
+    mediaUrl: string,
   ): Promise<LifeInDOU> {
     const lifeInDOU = await this.lifeInDOURepository.findOne({
-      where: { id, teacherId },
+      where: { teacherId },
     });
-    if (!lifeInDOU) {
-      throw new NotFoundException('Life in DOU not found');
+    
+    if (!lifeInDOU || !lifeInDOU.mediaItems || lifeInDOU.mediaItems.length === 0) {
+      throw new NotFoundException('Media item not found');
     }
-    Object.assign(lifeInDOU, updateDto);
+    
+    // Удаляем медиа элемент по URL
+    const filteredItems = lifeInDOU.mediaItems.filter(item => item.url !== mediaUrl);
+    
+    // Если медиа элементов не осталось, устанавливаем null
+    if (filteredItems.length === 0) {
+      lifeInDOU.mediaItems = null;
+    } else {
+      lifeInDOU.mediaItems = filteredItems;
+    }
+    
     return this.lifeInDOURepository.save(lifeInDOU);
   }
 

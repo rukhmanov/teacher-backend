@@ -24,9 +24,10 @@ export class UploadController {
         fileSize: 10 * 1024 * 1024, // 10MB
       },
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedMimes.includes(file.mimetype)) {
           return cb(
-            new BadRequestException('Only image files are allowed'),
+            new BadRequestException(`Only image files are allowed. Received: ${file.mimetype}`),
             false,
           );
         }
@@ -36,10 +37,19 @@ export class UploadController {
   )
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException('No file uploaded. Please ensure the file field is named "file"');
     }
-    const url = await this.uploadService.uploadImage(file);
-    return { url };
+    
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is empty');
+    }
+    
+    try {
+      const url = await this.uploadService.uploadImage(file);
+      return { url };
+    } catch (error) {
+      throw new BadRequestException(`Failed to upload image: ${error.message}`);
+    }
   }
 
   @Post('file')

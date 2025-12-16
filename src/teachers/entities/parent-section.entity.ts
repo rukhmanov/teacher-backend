@@ -30,6 +30,12 @@ export class ParentSection {
   @Column('simple-array', { nullable: true })
   files: string[];
 
+  @Column({ nullable: true })
+  cardColor: string;
+
+  @Column({ nullable: true })
+  coverImage: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

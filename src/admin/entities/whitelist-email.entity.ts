@@ -27,3 +27,4 @@ export class WhitelistEmail {
   createdAt: Date;
 }
 
+

@@ -6,3 +6,4 @@ export class CreateLifeInDOUDto {
   mediaItems?: Array<{ type: 'photo' | 'video'; url: string; caption?: string }>;
 }
 
+

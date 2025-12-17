@@ -5,3 +5,4 @@ export enum SocialPlatform {
   MESSENGER_MAX = 'MESSENGER_MAX',
 }
 
+

@@ -31,3 +31,4 @@ export class LifeInDOU {
   updatedAt: Date;
 }
 
+

@@ -24,3 +24,4 @@ export class CreatePresentationDto {
   coverImage?: string;
 }
 
+

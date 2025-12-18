@@ -12,6 +12,8 @@ import { Presentation } from './entities/presentation.entity';
 import { ParentSection } from './entities/parent-section.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
+import { Review } from './entities/review.entity';
+import { Folder } from './entities/folder.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateMasterClassDto } from './dto/create-master-class.dto';
@@ -19,6 +21,8 @@ import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { CreateParentSectionDto } from './dto/create-parent-section.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateFolderDto } from './dto/create-folder.dto';
 import { UsersService } from '../users/users.service';
 import { UploadService } from '../upload/upload.service';
 
@@ -39,6 +43,10 @@ export class TeachersService {
     private lifeInDOURepository: Repository<LifeInDOU>,
     @InjectRepository(SocialLink)
     private socialLinkRepository: Repository<SocialLink>,
+    @InjectRepository(Review)
+    private reviewRepository: Repository<Review>,
+    @InjectRepository(Folder)
+    private folderRepository: Repository<Folder>,
     private usersService: UsersService,
     private uploadService: UploadService,
   ) {}
@@ -590,6 +598,152 @@ export class TeachersService {
 
     // Delete user account
     await this.usersService.delete(userId);
+  }
+
+  // Reviews
+  async createReview(teacherId: string, createReviewDto: CreateReviewDto): Promise<Review> {
+    const review = this.reviewRepository.create({
+      teacherId,
+      ...createReviewDto,
+    });
+    return this.reviewRepository.save(review);
+  }
+
+  async getReviewsByTeacherId(teacherId: string): Promise<Review[]> {
+    return this.reviewRepository.find({
+      where: { teacherId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async deleteReview(reviewId: string, userId: string): Promise<void> {
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId },
+      relations: ['teacher', 'teacher.user'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    // Only the teacher who owns the profile can delete reviews
+    if (review.teacher.userId !== userId) {
+      throw new ForbiddenException('You can only delete reviews from your own profile');
+    }
+
+    await this.reviewRepository.remove(review);
+  }
+
+  // Folders
+  async createFolder(teacherId: string, createFolderDto: CreateFolderDto): Promise<Folder> {
+    let lifeInDOU = await this.lifeInDOURepository.findOne({
+      where: { teacherId },
+    });
+
+    if (!lifeInDOU) {
+      lifeInDOU = this.lifeInDOURepository.create({
+        teacherId,
+        mediaItems: null,
+      });
+      lifeInDOU = await this.lifeInDOURepository.save(lifeInDOU);
+    }
+
+    const folder = this.folderRepository.create({
+      lifeInDOUId: lifeInDOU.id,
+      name: createFolderDto.name,
+      mediaItems: createFolderDto.mediaItems || null,
+    });
+
+    return this.folderRepository.save(folder);
+  }
+
+  async getFoldersByTeacherId(teacherId: string): Promise<Folder[]> {
+    const lifeInDOU = await this.lifeInDOURepository.findOne({
+      where: { teacherId },
+    });
+
+    if (!lifeInDOU) {
+      return [];
+    }
+
+    return this.folderRepository.find({
+      where: { lifeInDOUId: lifeInDOU.id },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async addMediaToFolder(folderId: string, mediaItem: { type: 'photo' | 'video'; url: string; caption?: string }): Promise<Folder> {
+    const folder = await this.folderRepository.findOne({
+      where: { id: folderId },
+    });
+
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    const existingItems = folder.mediaItems || [];
+    folder.mediaItems = [...existingItems, mediaItem];
+
+    return this.folderRepository.save(folder);
+  }
+
+  async removeMediaFromFolder(folderId: string, mediaUrl: string): Promise<Folder> {
+    const folder = await this.folderRepository.findOne({
+      where: { id: folderId },
+    });
+
+    if (!folder || !folder.mediaItems || folder.mediaItems.length === 0) {
+      throw new NotFoundException('Media item not found');
+    }
+
+    await this.uploadService.deleteFile(mediaUrl);
+
+    const filteredItems = folder.mediaItems.filter(item => item.url !== mediaUrl);
+
+    if (filteredItems.length === 0) {
+      folder.mediaItems = null;
+    } else {
+      folder.mediaItems = filteredItems;
+    }
+
+    return this.folderRepository.save(folder);
+  }
+
+  async updateFolder(folderId: string, name: string): Promise<Folder> {
+    const folder = await this.folderRepository.findOne({
+      where: { id: folderId },
+    });
+
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    folder.name = name;
+    return this.folderRepository.save(folder);
+  }
+
+  async deleteFolder(folderId: string, userId: string): Promise<void> {
+    const folder = await this.folderRepository.findOne({
+      where: { id: folderId },
+      relations: ['lifeInDOU', 'lifeInDOU.teacher', 'lifeInDOU.teacher.user'],
+    });
+
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    if (folder.lifeInDOU.teacher.userId !== userId) {
+      throw new ForbiddenException('You can only delete folders from your own profile');
+    }
+
+    // Delete all media files in the folder
+    if (folder.mediaItems) {
+      for (const item of folder.mediaItems) {
+        await this.uploadService.deleteFile(item.url);
+      }
+    }
+
+    await this.folderRepository.remove(folder);
   }
 }
 

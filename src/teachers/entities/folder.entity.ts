@@ -6,28 +6,26 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
 } from 'typeorm';
-import { TeacherProfile } from './teacher-profile.entity';
-import { Folder } from './folder.entity';
+import { LifeInDOU } from './life-in-dou.entity';
 
-@Entity('life_in_dou')
-export class LifeInDOU {
+@Entity('folders')
+export class Folder {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  teacherId: string;
+  lifeInDOUId: string;
 
-  @ManyToOne(() => TeacherProfile, (teacher) => teacher.lifeInDOU)
-  @JoinColumn({ name: 'teacherId' })
-  teacher: TeacherProfile;
+  @ManyToOne(() => LifeInDOU, (lifeInDOU) => lifeInDOU.folders)
+  @JoinColumn({ name: 'lifeInDOUId' })
+  lifeInDOU: LifeInDOU;
+
+  @Column()
+  name: string;
 
   @Column('json', { nullable: true })
   mediaItems: Array<{ type: 'photo' | 'video'; url: string; caption?: string }> | null;
-
-  @OneToMany(() => Folder, (folder) => folder.lifeInDOU)
-  folders: Folder[];
 
   @CreateDateColumn()
   createdAt: Date;
@@ -35,6 +33,3 @@ export class LifeInDOU {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-
-
-

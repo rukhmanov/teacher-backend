@@ -19,6 +19,8 @@ import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { CreateParentSectionDto } from './dto/create-parent-section.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateFolderDto } from './dto/create-folder.dto';
 
 @Controller('teachers')
 export class TeachersController {
@@ -307,6 +309,95 @@ export class TeachersController {
   ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.deleteSocialLink(id, profile.id);
+  }
+
+  // Reviews - Public endpoints
+  @Get(':username/reviews')
+  async getReviews(@Param('username') username: string) {
+    const teacher = await this.teachersService.getPublicProfile(username);
+    return this.teachersService.getReviewsByTeacherId(teacher.id);
+  }
+
+  @Post(':username/reviews')
+  async createReview(
+    @Param('username') username: string,
+    @Body() createReviewDto: CreateReviewDto,
+  ) {
+    const teacher = await this.teachersService.getPublicProfile(username);
+    return this.teachersService.createReview(teacher.id, createReviewDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/reviews/:id')
+  async deleteReview(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.teachersService.deleteReview(id, req.user.id);
+  }
+
+  // Folders - Protected endpoints
+  @UseGuards(JwtAuthGuard)
+  @Get('me/folders')
+  async getOwnFolders(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getFoldersByTeacherId(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/folders')
+  async createFolder(
+    @Request() req,
+    @Body() createFolderDto: CreateFolderDto,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.createFolder(profile.id, createFolderDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('me/folders/:id')
+  async updateFolder(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { name: string },
+  ) {
+    return this.teachersService.updateFolder(id, body.name);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/folders/:id/media')
+  async addMediaToFolder(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { type: 'photo' | 'video'; url: string; caption?: string },
+  ) {
+    return this.teachersService.addMediaToFolder(id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/folders/:id/media')
+  async removeMediaFromFolder(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { url: string },
+  ) {
+    return this.teachersService.removeMediaFromFolder(id, body.url);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/folders/:id')
+  async deleteFolder(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.teachersService.deleteFolder(id, req.user.id);
+  }
+
+  // Public endpoints for folders
+  @Get(':username/folders')
+  async getFolders(@Param('username') username: string) {
+    const teacher = await this.teachersService.getPublicProfile(username);
+    return this.teachersService.getFoldersByTeacherId(teacher.id);
   }
 }
 

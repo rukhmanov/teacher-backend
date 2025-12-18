@@ -16,6 +16,7 @@ import { Presentation } from './presentation.entity';
 import { ParentSection } from './parent-section.entity';
 import { LifeInDOU } from './life-in-dou.entity';
 import { SocialLink } from './social-link.entity';
+import { Review } from './review.entity';
 
 @Entity('teacher_profiles')
 export class TeacherProfile {
@@ -76,6 +77,9 @@ export class TeacherProfile {
 
   @OneToMany(() => SocialLink, (socialLink) => socialLink.teacher)
   socialLinks: SocialLink[];
+
+  @OneToMany(() => Review, (review) => review.teacher)
+  reviews: Review[];
 }
 
 

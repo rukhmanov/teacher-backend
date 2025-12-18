@@ -9,6 +9,8 @@ import { Presentation } from './entities/presentation.entity';
 import { ParentSection } from './entities/parent-section.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
+import { Review } from './entities/review.entity';
+import { Folder } from './entities/folder.entity';
 import { UsersModule } from '../users/users.module';
 import { UploadModule } from '../upload/upload.module';
 
@@ -22,6 +24,8 @@ import { UploadModule } from '../upload/upload.module';
       ParentSection,
       LifeInDOU,
       SocialLink,
+      Review,
+      Folder,
     ]),
     UsersModule,
     UploadModule,

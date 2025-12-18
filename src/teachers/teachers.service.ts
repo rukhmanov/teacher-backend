@@ -388,6 +388,7 @@ export class TeachersService {
   async removeMediaFromLifeInDOU(
     teacherId: string,
     mediaUrl: string,
+    deleteFile: boolean = true,
   ): Promise<LifeInDOU> {
     const lifeInDOU = await this.lifeInDOURepository.findOne({
       where: { teacherId },
@@ -397,8 +398,10 @@ export class TeachersService {
       throw new NotFoundException('Media item not found');
     }
     
-    // Удаляем файл из хранилища
-    await this.uploadService.deleteFile(mediaUrl);
+    // Удаляем файл из хранилища только если указано
+    if (deleteFile) {
+      await this.uploadService.deleteFile(mediaUrl);
+    }
     
     // Удаляем медиа элемент по URL
     const filteredItems = lifeInDOU.mediaItems.filter(item => item.url !== mediaUrl);
@@ -687,7 +690,7 @@ export class TeachersService {
     return this.folderRepository.save(folder);
   }
 
-  async removeMediaFromFolder(folderId: string, mediaUrl: string): Promise<Folder> {
+  async removeMediaFromFolder(folderId: string, mediaUrl: string, deleteFile: boolean = true): Promise<Folder> {
     const folder = await this.folderRepository.findOne({
       where: { id: folderId },
     });
@@ -696,7 +699,10 @@ export class TeachersService {
       throw new NotFoundException('Media item not found');
     }
 
-    await this.uploadService.deleteFile(mediaUrl);
+    // Удаляем файл из хранилища только если указано
+    if (deleteFile) {
+      await this.uploadService.deleteFile(mediaUrl);
+    }
 
     const filteredItems = folder.mediaItems.filter(item => item.url !== mediaUrl);
 
@@ -707,6 +713,73 @@ export class TeachersService {
     }
 
     return this.folderRepository.save(folder);
+  }
+
+  async moveMedia(
+    teacherId: string,
+    mediaUrl: string,
+    sourceFolderId: string | null,
+    targetFolderId: string | null,
+  ): Promise<void> {
+    const mediaItem = await this.findMediaItem(teacherId, mediaUrl, sourceFolderId);
+    
+    if (!mediaItem) {
+      throw new NotFoundException('Media item not found');
+    }
+
+    // Удаляем из источника (без удаления файла)
+    if (sourceFolderId) {
+      await this.removeMediaFromFolder(sourceFolderId, mediaUrl, false);
+    } else {
+      await this.removeMediaFromLifeInDOU(teacherId, mediaUrl, false);
+    }
+
+    // Добавляем в цель
+    if (targetFolderId) {
+      const folder = await this.folderRepository.findOne({
+        where: { id: targetFolderId },
+      });
+      if (!folder) {
+        throw new NotFoundException('Target folder not found');
+      }
+      const existingItems = folder.mediaItems || [];
+      folder.mediaItems = [...existingItems, mediaItem];
+      await this.folderRepository.save(folder);
+    } else {
+      const lifeInDOU = await this.lifeInDOURepository.findOne({
+        where: { teacherId },
+      });
+      if (!lifeInDOU) {
+        throw new NotFoundException('LifeInDOU not found');
+      }
+      const existingItems = lifeInDOU.mediaItems || [];
+      lifeInDOU.mediaItems = [...existingItems, mediaItem];
+      await this.lifeInDOURepository.save(lifeInDOU);
+    }
+  }
+
+  private async findMediaItem(
+    teacherId: string,
+    mediaUrl: string,
+    folderId: string | null,
+  ): Promise<{ type: 'photo' | 'video'; url: string; caption?: string } | null> {
+    if (folderId) {
+      const folder = await this.folderRepository.findOne({
+        where: { id: folderId },
+      });
+      if (!folder || !folder.mediaItems) {
+        return null;
+      }
+      return folder.mediaItems.find(item => item.url === mediaUrl) || null;
+    } else {
+      const lifeInDOU = await this.lifeInDOURepository.findOne({
+        where: { teacherId },
+      });
+      if (!lifeInDOU || !lifeInDOU.mediaItems) {
+        return null;
+      }
+      return lifeInDOU.mediaItems.find(item => item.url === mediaUrl) || null;
+    }
   }
 
   async updateFolder(folderId: string, name: string): Promise<Folder> {

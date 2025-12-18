@@ -36,6 +36,9 @@ export class TeacherProfile {
   lastName: string;
 
   @Column({ nullable: true })
+  patronymic: string;
+
+  @Column({ nullable: true })
   photoUrl: string;
 
   @Column({ type: 'text', nullable: true })

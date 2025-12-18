@@ -12,6 +12,10 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  patronymic?: string;
+
+  @IsOptional()
+  @IsString()
   photoUrl?: string;
 
   @IsOptional()

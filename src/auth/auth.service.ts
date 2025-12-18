@@ -59,6 +59,7 @@ export class AuthService {
       userId: user.id,
       firstName: registerDto.firstName,
       lastName: registerDto.lastName,
+      patronymic: registerDto.patronymic,
     });
     await this.teacherProfileRepository.save(profile);
 

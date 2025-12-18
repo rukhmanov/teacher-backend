@@ -10,8 +10,27 @@ async function bootstrap() {
   // Файлы теперь хранятся в S3, статическая раздача не нужна
 
   // Enable CORS
+  // Список разрешенных доменов фронтенда
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:4200',
+    'https://rukhmanov-teacher-frontend-b1d8.twc1.net',
+    'http://rukhmanov-teacher-frontend-b1d8.twc1.net',
+  ].filter(Boolean); // Убираем undefined значения
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    origin: (origin, callback) => {
+      // Разрешаем запросы без origin (например, от Postman, мобильных приложений)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Проверяем, есть ли origin в списке разрешенных
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 

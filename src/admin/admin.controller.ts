@@ -50,6 +50,12 @@ export class AdminController {
   async removeFromWhitelist(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.removeFromWhitelist(id);
   }
+
+  @Delete('teachers/:id')
+  async deleteTeacher(@Param('id', ParseUUIDPipe) id: string) {
+    await this.adminService.deleteTeacher(id);
+    return { message: 'Teacher deleted successfully' };
+  }
 }
 
 

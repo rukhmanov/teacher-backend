@@ -5,6 +5,7 @@ import { WhitelistEmail } from './entities/whitelist-email.entity';
 import { TeachersService } from '../teachers/teachers.service';
 import { TeacherProfile } from '../teachers/entities/teacher-profile.entity';
 import { UpdateProfileDto } from '../teachers/dto/update-profile.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AdminService {
@@ -14,6 +15,7 @@ export class AdminService {
     @InjectRepository(TeacherProfile)
     private teacherProfileRepository: Repository<TeacherProfile>,
     private teachersService: TeachersService,
+    private usersService: UsersService,
   ) {}
 
   async getAllTeachers(): Promise<TeacherProfile[]> {
@@ -63,7 +65,36 @@ export class AdminService {
     if (!entry) {
       throw new NotFoundException('Whitelist entry not found');
     }
+
+    // Находим пользователя по email и удаляем его профиль преподавателя и аккаунт, если он существует
+    const user = await this.usersService.findByEmail(entry.email);
+    if (user) {
+      // Проверяем, есть ли у пользователя профиль преподавателя
+      const profile = await this.teacherProfileRepository.findOne({
+        where: { userId: user.id },
+      });
+
+      if (profile) {
+        // Если профиль есть, удаляем через deleteProfile (удалит и профиль, и пользователя)
+        await this.teachersService.deleteProfile(user.id);
+      } else {
+        // Если профиля нет, просто удаляем пользователя
+        await this.usersService.delete(user.id);
+      }
+    }
+
     await this.whitelistRepository.remove(entry);
+  }
+
+  async deleteTeacher(teacherId: string): Promise<void> {
+    const profile = await this.teacherProfileRepository.findOne({
+      where: { id: teacherId },
+      relations: ['user'],
+    });
+    if (!profile) {
+      throw new NotFoundException('Teacher not found');
+    }
+    await this.teachersService.deleteProfile(profile.userId);
   }
 }
 

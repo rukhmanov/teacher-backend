@@ -6,6 +6,7 @@ import { TeacherProfile } from './entities/teacher-profile.entity';
 import { Post } from './entities/post.entity';
 import { MasterClass } from './entities/master-class.entity';
 import { Presentation } from './entities/presentation.entity';
+import { Publication } from './entities/publication.entity';
 import { ParentSection } from './entities/parent-section.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
@@ -21,6 +22,7 @@ import { UploadModule } from '../upload/upload.module';
       Post,
       MasterClass,
       Presentation,
+      Publication,
       ParentSection,
       LifeInDOU,
       SocialLink,

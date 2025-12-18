@@ -9,6 +9,7 @@ import { TeacherProfile } from './entities/teacher-profile.entity';
 import { Post } from './entities/post.entity';
 import { MasterClass } from './entities/master-class.entity';
 import { Presentation } from './entities/presentation.entity';
+import { Publication } from './entities/publication.entity';
 import { ParentSection } from './entities/parent-section.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
@@ -18,6 +19,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateMasterClassDto } from './dto/create-master-class.dto';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
+import { CreatePublicationDto } from './dto/create-publication.dto';
 import { CreateParentSectionDto } from './dto/create-parent-section.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
@@ -37,6 +39,8 @@ export class TeachersService {
     private masterClassRepository: Repository<MasterClass>,
     @InjectRepository(Presentation)
     private presentationRepository: Repository<Presentation>,
+    @InjectRepository(Publication)
+    private publicationRepository: Repository<Publication>,
     @InjectRepository(ParentSection)
     private parentSectionRepository: Repository<ParentSection>,
     @InjectRepository(LifeInDOU)
@@ -281,6 +285,70 @@ export class TeachersService {
     }
 
     await this.presentationRepository.remove(presentation);
+  }
+
+  // Publications
+  async getPublications(teacherId: string): Promise<Publication[]> {
+    return this.publicationRepository.find({
+      where: { teacherId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async createPublication(
+    teacherId: string,
+    createDto: CreatePublicationDto,
+  ): Promise<Publication> {
+    const publication = this.publicationRepository.create({
+      ...createDto,
+      teacherId,
+    });
+    return this.publicationRepository.save(publication);
+  }
+
+  async updatePublication(
+    id: string,
+    teacherId: string,
+    updateDto: Partial<CreatePublicationDto>,
+  ): Promise<Publication> {
+    const publication = await this.publicationRepository.findOne({
+      where: { id, teacherId },
+    });
+    if (!publication) {
+      throw new NotFoundException('Publication not found');
+    }
+    Object.assign(publication, updateDto);
+    return this.publicationRepository.save(publication);
+  }
+
+  async deletePublication(id: string, teacherId: string): Promise<void> {
+    const publication = await this.publicationRepository.findOne({
+      where: { id, teacherId },
+    });
+    if (!publication) {
+      throw new NotFoundException('Publication not found');
+    }
+
+    // Удаляем все связанные файлы
+    const filesToDelete: string[] = [];
+    
+    if (publication.fileUrl) {
+      filesToDelete.push(publication.fileUrl);
+    }
+    
+    if (publication.previewImage) {
+      filesToDelete.push(publication.previewImage);
+    }
+    
+    if (publication.coverImage) {
+      filesToDelete.push(publication.coverImage);
+    }
+
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
+    await this.publicationRepository.remove(publication);
   }
 
   // Parent Sections
@@ -540,6 +608,20 @@ export class TeachersService {
       }
     });
 
+    // Собираем файлы из публикаций
+    const publications = await this.publicationRepository.find({ where: { teacherId: profileId } });
+    publications.forEach(pub => {
+      if (pub.fileUrl) {
+        filesToDelete.push(pub.fileUrl);
+      }
+      if (pub.previewImage) {
+        filesToDelete.push(pub.previewImage);
+      }
+      if (pub.coverImage) {
+        filesToDelete.push(pub.coverImage);
+      }
+    });
+
     // Собираем файлы из разделов для родителей
     const parentSections = await this.parentSectionRepository.find({ where: { teacherId: profileId } });
     parentSections.forEach(ps => {
@@ -580,6 +662,10 @@ export class TeachersService {
 
     if (presentations.length > 0) {
       await this.presentationRepository.remove(presentations);
+    }
+
+    if (publications.length > 0) {
+      await this.publicationRepository.remove(publications);
     }
 
     if (parentSections.length > 0) {

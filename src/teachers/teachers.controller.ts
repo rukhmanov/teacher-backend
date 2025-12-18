@@ -16,6 +16,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateMasterClassDto } from './dto/create-master-class.dto';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
+import { CreatePublicationDto } from './dto/create-publication.dto';
 import { CreateParentSectionDto } from './dto/create-parent-section.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
@@ -75,6 +76,13 @@ export class TeachersController {
   async getOwnPresentations(@Request() req) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.getPresentations(profile.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/publications')
+  async getOwnPublications(@Request() req) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.getPublications(profile.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -210,6 +218,45 @@ export class TeachersController {
   ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.deletePresentation(id, profile.id);
+  }
+
+  // Publications
+  @UseGuards(JwtAuthGuard)
+  @Post('me/publications')
+  async createPublication(
+    @Request() req,
+    @Body() createDto: CreatePublicationDto,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.createPublication(profile.id, createDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('me/publications/:id')
+  async updatePublication(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: CreatePublicationDto,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.updatePublication(id, profile.id, updateDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/publications/:id')
+  async deletePublication(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    return this.teachersService.deletePublication(id, profile.id);
+  }
+
+  // Public routes for publications and certificates
+  @Get(':username/publications')
+  async getPublications(@Param('username') username: string) {
+    const profile = await this.teachersService.getPublicProfile(username);
+    return this.teachersService.getPublications(profile.id);
   }
 
   // Parent Sections

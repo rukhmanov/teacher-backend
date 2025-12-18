@@ -20,6 +20,10 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  videoUrl?: string;
+
+  @IsOptional()
+  @IsString()
   bio?: string;
 
   @IsOptional()

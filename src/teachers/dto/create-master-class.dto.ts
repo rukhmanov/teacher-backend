@@ -21,6 +21,14 @@ export class CreateMasterClassDto {
   videos?: string[];
 
   @IsOptional()
+  @IsArray()
+  files?: string[];
+
+  @IsOptional()
+  @IsString()
+  fileUrl?: string;
+
+  @IsOptional()
   @IsString()
   cardColor?: string;
 

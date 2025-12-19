@@ -33,6 +33,12 @@ export class Post {
   @Column('simple-array', { nullable: true })
   videos: string[];
 
+  @Column('simple-array', { nullable: true })
+  files: string[];
+
+  @Column({ nullable: true })
+  fileUrl: string;
+
   @Column({ nullable: true })
   cardColor: string;
 

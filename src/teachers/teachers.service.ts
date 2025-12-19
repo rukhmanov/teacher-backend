@@ -96,11 +96,24 @@ export class TeachersService {
   }
 
   // Posts
-  async getPosts(teacherId: string): Promise<Post[]> {
-    return this.postRepository.find({
-      where: { teacherId },
-      order: { createdAt: 'DESC' },
-    });
+  async getPosts(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<Post[]> {
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .where('post.teacherId = :teacherId', { teacherId })
+      .orderBy('post.createdAt', 'DESC');
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   async createPost(teacherId: string, createDto: CreatePostDto): Promise<Post> {
@@ -158,11 +171,24 @@ export class TeachersService {
   }
 
   // Master Classes
-  async getMasterClasses(teacherId: string): Promise<MasterClass[]> {
-    return this.masterClassRepository.find({
-      where: { teacherId },
-      order: { createdAt: 'DESC' },
-    });
+  async getMasterClasses(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<MasterClass[]> {
+    const queryBuilder = this.masterClassRepository
+      .createQueryBuilder('masterClass')
+      .where('masterClass.teacherId = :teacherId', { teacherId })
+      .orderBy('masterClass.createdAt', 'DESC');
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   async createMasterClass(
@@ -223,11 +249,24 @@ export class TeachersService {
   }
 
   // Presentations
-  async getPresentations(teacherId: string): Promise<Presentation[]> {
-    return this.presentationRepository.find({
-      where: { teacherId },
-      order: { createdAt: 'DESC' },
-    });
+  async getPresentations(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<Presentation[]> {
+    const queryBuilder = this.presentationRepository
+      .createQueryBuilder('presentation')
+      .where('presentation.teacherId = :teacherId', { teacherId })
+      .orderBy('presentation.createdAt', 'DESC');
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   async createPresentation(
@@ -288,11 +327,34 @@ export class TeachersService {
   }
 
   // Publications
-  async getPublications(teacherId: string): Promise<Publication[]> {
-    return this.publicationRepository.find({
-      where: { teacherId },
-      order: { createdAt: 'DESC' },
-    });
+  async getPublications(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+    type?: string,
+  ): Promise<Publication[]> {
+    const queryBuilder = this.publicationRepository
+      .createQueryBuilder('publication')
+      .where('publication.teacherId = :teacherId', { teacherId })
+      .orderBy('publication.createdAt', 'DESC');
+
+    // Фильтруем по типу, если указан
+    // Если type='publication', показываем только публикации (type='publication' или type IS NULL)
+    if (type === 'publication') {
+      queryBuilder.andWhere('(publication.type = :type OR publication.type IS NULL)', { type });
+    } else if (type) {
+      // Для других типов (например, 'certificate') показываем только этот тип
+      queryBuilder.andWhere('publication.type = :type', { type });
+    }
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   async createPublication(
@@ -352,11 +414,24 @@ export class TeachersService {
   }
 
   // Parent Sections
-  async getParentSections(teacherId: string): Promise<ParentSection[]> {
-    return this.parentSectionRepository.find({
-      where: { teacherId },
-      order: { createdAt: 'DESC' },
-    });
+  async getParentSections(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<ParentSection[]> {
+    const queryBuilder = this.parentSectionRepository
+      .createQueryBuilder('parentSection')
+      .where('parentSection.teacherId = :teacherId', { teacherId })
+      .orderBy('parentSection.createdAt', 'DESC');
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   async createParentSection(

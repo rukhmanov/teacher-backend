@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   ParseUUIDPipe,
@@ -59,37 +60,68 @@ export class TeachersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me/posts')
-  async getOwnPosts(@Request() req) {
+  async getOwnPosts(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getPosts(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getPosts(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me/master-classes')
-  async getOwnMasterClasses(@Request() req) {
+  async getOwnMasterClasses(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getMasterClasses(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getMasterClasses(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me/presentations')
-  async getOwnPresentations(@Request() req) {
+  async getOwnPresentations(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getPresentations(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getPresentations(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me/publications')
-  async getOwnPublications(@Request() req) {
+  async getOwnPublications(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+    @Query('type') type?: string,
+  ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getPublications(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getPublications(profile.id, skipNum, takeNum, type);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me/parents')
-  async getOwnParentSections(@Request() req) {
+  async getOwnParentSections(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
-    return this.teachersService.getParentSections(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getParentSections(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -114,9 +146,15 @@ export class TeachersController {
 
   // Posts
   @Get(':username/posts')
-  async getPosts(@Param('username') username: string) {
+  async getPosts(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getPosts(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getPosts(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -146,9 +184,15 @@ export class TeachersController {
 
   // Master Classes
   @Get(':username/master-classes')
-  async getMasterClasses(@Param('username') username: string) {
+  async getMasterClasses(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getMasterClasses(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getMasterClasses(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -184,9 +228,15 @@ export class TeachersController {
 
   // Presentations
   @Get(':username/presentations')
-  async getPresentations(@Param('username') username: string) {
+  async getPresentations(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getPresentations(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getPresentations(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -254,16 +304,29 @@ export class TeachersController {
 
   // Public routes for publications and certificates
   @Get(':username/publications')
-  async getPublications(@Param('username') username: string) {
+  async getPublications(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+    @Query('type') type?: string,
+  ) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getPublications(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getPublications(profile.id, skipNum, takeNum, type);
   }
 
   // Parent Sections
   @Get(':username/parents')
-  async getParentSections(@Param('username') username: string) {
+  async getParentSections(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
     const profile = await this.teachersService.getPublicProfile(username);
-    return this.teachersService.getParentSections(profile.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getParentSections(profile.id, skipNum, takeNum);
   }
 
   @UseGuards(JwtAuthGuard)

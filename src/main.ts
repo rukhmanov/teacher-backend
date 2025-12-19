@@ -11,10 +11,16 @@ async function bootstrap() {
 
   // Enable CORS
   // Список разрешенных доменов фронтенда
+  const frontendUrls = process.env.FRONTEND_URL 
+    ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+    : ['http://localhost:4200'];
+  
   const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:4200',
+    ...frontendUrls,
     'https://rukhmanov-teacher-frontend-b1d8.twc1.net',
     'http://rukhmanov-teacher-frontend-b1d8.twc1.net',
+    'https://vospitatel52.ru',
+    'http://vospitatel52.ru',
   ].filter(Boolean); // Убираем undefined значения
 
   app.enableCors({

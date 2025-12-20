@@ -26,19 +26,9 @@ export const getDatabaseConfig = (
   
   const password = configService.get<string>('POSTGRESQL_PASSWORD')
     || configService.get<string>('DB_PASSWORD', '');
-
+  
   const database = configService.get<string>('POSTGRESQL_DBNAME')
     || configService.get<string>('DB_DATABASE', 'school');
-
-  // Логирование конфигурации (без пароля)
-  console.log('Database configuration:', {
-    type: isPostgres ? 'postgres' : 'mysql',
-    host,
-    port,
-    username,
-    database,
-    password: password ? '***' : '(empty)',
-  });
 
   return {
     type: isPostgres ? 'postgres' : 'mysql',
@@ -50,9 +40,6 @@ export const getDatabaseConfig = (
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: configService.get<string>('NODE_ENV') !== 'production',
     logging: configService.get<string>('NODE_ENV') === 'development',
-    retryAttempts: 3,
-    retryDelay: 3000,
-    autoLoadEntities: true,
   };
 };
 

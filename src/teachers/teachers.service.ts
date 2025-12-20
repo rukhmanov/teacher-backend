@@ -204,6 +204,19 @@ export class TeachersService {
     return lifeInDOU;
   }
 
+  /**
+   * Формирует полные URL в объекте Folder для возврата в API
+   */
+  private transformFolder(folder: Folder): Folder {
+    if (folder.mediaItems && Array.isArray(folder.mediaItems)) {
+      folder.mediaItems = folder.mediaItems.map(item => ({
+        ...item,
+        url: this.buildFullUrl(item.url) || item.url,
+      }));
+    }
+    return folder;
+  }
+
   async getPublicProfile(username: string): Promise<TeacherProfile> {
     const user = await this.usersService.findByUsername(username);
     if (!user) {
@@ -1332,7 +1345,8 @@ export class TeachersService {
       mediaItems: createFolderDto.mediaItems || null,
     });
 
-    return this.folderRepository.save(folder);
+    const saved = await this.folderRepository.save(folder);
+    return this.transformFolder(saved);
   }
 
   async getFoldersByTeacherId(teacherId: string): Promise<Folder[]> {
@@ -1344,10 +1358,12 @@ export class TeachersService {
       return [];
     }
 
-    return this.folderRepository.find({
+    const folders = await this.folderRepository.find({
       where: { lifeInDOUId: lifeInDOU.id },
       order: { createdAt: 'DESC' },
     });
+
+    return folders.map(folder => this.transformFolder(folder));
   }
 
   async addMediaToFolder(folderId: string, mediaItem: { type: 'photo' | 'video'; url: string; caption?: string }): Promise<Folder> {
@@ -1362,7 +1378,8 @@ export class TeachersService {
     const existingItems = folder.mediaItems || [];
     folder.mediaItems = [...existingItems, mediaItem];
 
-    return this.folderRepository.save(folder);
+    const saved = await this.folderRepository.save(folder);
+    return this.transformFolder(saved);
   }
 
   async removeMediaFromFolder(folderId: string, mediaUrl: string, deleteFile: boolean = true): Promise<Folder> {
@@ -1387,7 +1404,8 @@ export class TeachersService {
       folder.mediaItems = filteredItems;
     }
 
-    return this.folderRepository.save(folder);
+    const saved = await this.folderRepository.save(folder);
+    return this.transformFolder(saved);
   }
 
   async moveMedia(
@@ -1467,7 +1485,8 @@ export class TeachersService {
     }
 
     folder.name = name;
-    return this.folderRepository.save(folder);
+    const saved = await this.folderRepository.save(folder);
+    return this.transformFolder(saved);
   }
 
   async deleteFolder(folderId: string, userId: string): Promise<void> {

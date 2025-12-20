@@ -12,6 +12,7 @@ import { MasterClass } from './entities/master-class.entity';
 import { Presentation } from './entities/presentation.entity';
 import { Publication } from './entities/publication.entity';
 import { ParentSection } from './entities/parent-section.entity';
+import { Lesson } from './entities/lesson.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
 import { Review } from './entities/review.entity';
@@ -22,6 +23,7 @@ import { CreateMasterClassDto } from './dto/create-master-class.dto';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { CreatePublicationDto } from './dto/create-publication.dto';
 import { CreateParentSectionDto } from './dto/create-parent-section.dto';
+import { CreateLessonDto } from './dto/create-lesson.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -49,6 +51,8 @@ export class TeachersService {
     private publicationRepository: Repository<Publication>,
     @InjectRepository(ParentSection)
     private parentSectionRepository: Repository<ParentSection>,
+    @InjectRepository(Lesson)
+    private lessonRepository: Repository<Lesson>,
     @InjectRepository(LifeInDOU)
     private lifeInDOURepository: Repository<LifeInDOU>,
     @InjectRepository(SocialLink)
@@ -958,6 +962,116 @@ export class TeachersService {
     }
 
     await this.parentSectionRepository.remove(parentSection);
+  }
+
+  // Lessons
+  async getLessons(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<Lesson[]> {
+    const queryBuilder = this.lessonRepository
+      .createQueryBuilder('lesson')
+      .where('lesson.teacherId = :teacherId', { teacherId })
+      .orderBy('lesson.createdAt', 'DESC');
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
+  }
+
+  async createLesson(
+    teacherId: string,
+    createDto: CreateLessonDto,
+  ): Promise<Lesson> {
+    // Нормализуем пути перед сохранением
+    if (createDto.files !== undefined) {
+      createDto.files = this.normalizePaths(createDto.files);
+    }
+    if (createDto.coverImage !== undefined) {
+      createDto.coverImage = this.normalizePath(createDto.coverImage);
+    }
+
+    const lesson = this.lessonRepository.create({
+      ...createDto,
+      teacherId,
+    });
+    return this.lessonRepository.save(lesson);
+  }
+
+  async updateLesson(
+    id: string,
+    teacherId: string,
+    updateDto: Partial<CreateLessonDto>,
+  ): Promise<Lesson> {
+    const lesson = await this.lessonRepository.findOne({
+      where: { id, teacherId },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
+    
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.files !== undefined && updateDto.files !== lesson.files) {
+      const oldFiles = lesson.files || [];
+      const newFiles = updateDto.files || [];
+      const removedFiles = oldFiles.filter(file => !newFiles.includes(file));
+      filesToDelete.push(...removedFiles);
+    }
+    
+    if (updateDto.coverImage !== undefined && updateDto.coverImage !== lesson.coverImage && lesson.coverImage) {
+      filesToDelete.push(lesson.coverImage);
+    }
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.files !== undefined) {
+      updateDto.files = this.normalizePaths(updateDto.files);
+    }
+    if (updateDto.coverImage !== undefined) {
+      updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+    
+    Object.assign(lesson, updateDto);
+    return this.lessonRepository.save(lesson);
+  }
+
+  async deleteLesson(id: string, teacherId: string): Promise<void> {
+    const lesson = await this.lessonRepository.findOne({
+      where: { id, teacherId },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
+
+    // Удаляем все связанные файлы
+    const filesToDelete: string[] = [];
+    
+    if (lesson.files && lesson.files.length > 0) {
+      filesToDelete.push(...lesson.files);
+    }
+    
+    if (lesson.coverImage) {
+      filesToDelete.push(lesson.coverImage);
+    }
+
+    // Удаляем файлы параллельно
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+
+    await this.lessonRepository.remove(lesson);
   }
 
   // Life in DOU - получаем или создаем один объект для учителя

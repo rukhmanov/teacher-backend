@@ -83,8 +83,8 @@ export class UploadController {
   @SetMetadata('isPublic', true)
   async proxyFile(
     @Query('path') filePath: string,
-    @Query('download') download?: string,
     @Res() res: Response,
+    @Query('download') download?: string,
   ) {
     if (!filePath) {
       throw new BadRequestException('File path is required');

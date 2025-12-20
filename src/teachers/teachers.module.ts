@@ -8,6 +8,7 @@ import { MasterClass } from './entities/master-class.entity';
 import { Presentation } from './entities/presentation.entity';
 import { Publication } from './entities/publication.entity';
 import { ParentSection } from './entities/parent-section.entity';
+import { Lesson } from './entities/lesson.entity';
 import { LifeInDOU } from './entities/life-in-dou.entity';
 import { SocialLink } from './entities/social-link.entity';
 import { Review } from './entities/review.entity';
@@ -24,6 +25,7 @@ import { UploadModule } from '../upload/upload.module';
       Presentation,
       Publication,
       ParentSection,
+      Lesson,
       LifeInDOU,
       SocialLink,
       Review,
@@ -37,6 +39,7 @@ import { UploadModule } from '../upload/upload.module';
   exports: [TeachersService],
 })
 export class TeachersModule {}
+
 
 
 

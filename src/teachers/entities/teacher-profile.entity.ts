@@ -15,6 +15,7 @@ import { MasterClass } from './master-class.entity';
 import { Presentation } from './presentation.entity';
 import { Publication } from './publication.entity';
 import { ParentSection } from './parent-section.entity';
+import { Lesson } from './lesson.entity';
 import { LifeInDOU } from './life-in-dou.entity';
 import { SocialLink } from './social-link.entity';
 import { Review } from './review.entity';
@@ -79,6 +80,9 @@ export class TeacherProfile {
   @OneToMany(() => ParentSection, (parentSection) => parentSection.teacher)
   parentSections: ParentSection[];
 
+  @OneToMany(() => Lesson, (lesson) => lesson.teacher)
+  lessons: Lesson[];
+
   @OneToMany(() => LifeInDOU, (lifeInDOU) => lifeInDOU.teacher)
   lifeInDOU: LifeInDOU[];
 
@@ -88,6 +92,7 @@ export class TeacherProfile {
   @OneToMany(() => Review, (review) => review.teacher)
   reviews: Review[];
 }
+
 
 
 

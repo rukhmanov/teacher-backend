@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,6 +20,7 @@ import { CreateMasterClassDto } from './dto/create-master-class.dto';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { CreatePublicationDto } from './dto/create-publication.dto';
 import { CreateParentSectionDto } from './dto/create-parent-section.dto';
+import { CreateLessonDto } from './dto/create-lesson.dto';
 import { CreateLifeInDOUDto } from './dto/create-life-in-dou.dto';
 import { AddSocialLinkDto } from './dto/add-social-link.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -383,6 +385,75 @@ export class TeachersController {
   ) {
     const profile = await this.teachersService.getOwnProfile(req.user.id);
     return this.teachersService.deleteParentSection(id, profile.id);
+  }
+
+  // Lessons
+  @UseGuards(JwtAuthGuard)
+  @Get('me/lessons')
+  async getOwnLessons(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    if (!profile) {
+      throw new NotFoundException('Teacher profile not found');
+    }
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getLessons(profile.id, skipNum, takeNum);
+  }
+
+  @Get(':username/lessons')
+  async getLessons(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
+    const profile = await this.teachersService.getPublicProfile(username);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getLessons(profile.id, skipNum, takeNum);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/lessons')
+  async createLesson(
+    @Request() req,
+    @Body() createDto: CreateLessonDto,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    if (!profile) {
+      throw new NotFoundException('Teacher profile not found');
+    }
+    return this.teachersService.createLesson(profile.id, createDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('me/lessons/:id')
+  async updateLesson(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: CreateLessonDto,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    if (!profile) {
+      throw new NotFoundException('Teacher profile not found');
+    }
+    return this.teachersService.updateLesson(id, profile.id, updateDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/lessons/:id')
+  async deleteLesson(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    if (!profile) {
+      throw new NotFoundException('Teacher profile not found');
+    }
+    return this.teachersService.deleteLesson(id, profile.id);
   }
 
   // Life in DOU

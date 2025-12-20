@@ -241,12 +241,27 @@ export class TeachersService {
   ): Promise<TeacherProfile> {
     const profile = await this.getOwnProfile(userId);
     
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.photoUrl !== undefined && updateDto.photoUrl !== profile.photoUrl && profile.photoUrl) {
+      filesToDelete.push(profile.photoUrl);
+    }
+    if (updateDto.videoUrl !== undefined && updateDto.videoUrl !== profile.videoUrl && profile.videoUrl) {
+      filesToDelete.push(profile.videoUrl);
+    }
+    
     // Нормализуем пути перед сохранением
     if (updateDto.photoUrl !== undefined) {
       updateDto.photoUrl = this.normalizePath(updateDto.photoUrl) || updateDto.photoUrl;
     }
     if (updateDto.videoUrl !== undefined) {
       updateDto.videoUrl = this.normalizePath(updateDto.videoUrl) || updateDto.videoUrl;
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
     }
     
     Object.assign(profile, updateDto);
@@ -307,6 +322,39 @@ export class TeachersService {
       throw new NotFoundException('Post not found');
     }
     
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.images !== undefined && updateDto.images !== post.images) {
+      // Находим файлы, которые были удалены
+      const oldImages = post.images || [];
+      const newImages = updateDto.images || [];
+      const removedImages = oldImages.filter(img => !newImages.includes(img));
+      filesToDelete.push(...removedImages);
+    }
+    
+    if (updateDto.videos !== undefined && updateDto.videos !== post.videos) {
+      const oldVideos = post.videos || [];
+      const newVideos = updateDto.videos || [];
+      const removedVideos = oldVideos.filter(vid => !newVideos.includes(vid));
+      filesToDelete.push(...removedVideos);
+    }
+    
+    if (updateDto.files !== undefined && updateDto.files !== post.files) {
+      const oldFiles = post.files || [];
+      const newFiles = updateDto.files || [];
+      const removedFiles = oldFiles.filter(file => !newFiles.includes(file));
+      filesToDelete.push(...removedFiles);
+    }
+    
+    if (updateDto.fileUrl !== undefined && updateDto.fileUrl !== post.fileUrl && post.fileUrl) {
+      filesToDelete.push(post.fileUrl);
+    }
+    
+    if (updateDto.coverImage !== undefined && updateDto.coverImage !== post.coverImage && post.coverImage) {
+      filesToDelete.push(post.coverImage);
+    }
+    
     // Нормализуем пути перед сохранением
     if (updateDto.images !== undefined) {
       updateDto.images = this.normalizePaths(updateDto.images);
@@ -322,6 +370,11 @@ export class TeachersService {
     }
     if (updateDto.coverImage !== undefined) {
       updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
     }
     
     Object.assign(post, updateDto);
@@ -346,6 +399,14 @@ export class TeachersService {
     
     if (post.videos && post.videos.length > 0) {
       filesToDelete.push(...post.videos);
+    }
+    
+    if (post.files && post.files.length > 0) {
+      filesToDelete.push(...post.files);
+    }
+    
+    if (post.fileUrl) {
+      filesToDelete.push(post.fileUrl);
     }
     
     if (post.coverImage) {
@@ -416,6 +477,38 @@ export class TeachersService {
       throw new NotFoundException('Master class not found');
     }
     
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.images !== undefined && updateDto.images !== masterClass.images) {
+      const oldImages = masterClass.images || [];
+      const newImages = updateDto.images || [];
+      const removedImages = oldImages.filter(img => !newImages.includes(img));
+      filesToDelete.push(...removedImages);
+    }
+    
+    if (updateDto.videos !== undefined && updateDto.videos !== masterClass.videos) {
+      const oldVideos = masterClass.videos || [];
+      const newVideos = updateDto.videos || [];
+      const removedVideos = oldVideos.filter(vid => !newVideos.includes(vid));
+      filesToDelete.push(...removedVideos);
+    }
+    
+    if (updateDto.files !== undefined && updateDto.files !== masterClass.files) {
+      const oldFiles = masterClass.files || [];
+      const newFiles = updateDto.files || [];
+      const removedFiles = oldFiles.filter(file => !newFiles.includes(file));
+      filesToDelete.push(...removedFiles);
+    }
+    
+    if (updateDto.fileUrl !== undefined && updateDto.fileUrl !== masterClass.fileUrl && masterClass.fileUrl) {
+      filesToDelete.push(masterClass.fileUrl);
+    }
+    
+    if (updateDto.coverImage !== undefined && updateDto.coverImage !== masterClass.coverImage && masterClass.coverImage) {
+      filesToDelete.push(masterClass.coverImage);
+    }
+    
     // Нормализуем пути перед сохранением
     if (updateDto.images !== undefined) {
       updateDto.images = this.normalizePaths(updateDto.images);
@@ -431,6 +524,11 @@ export class TeachersService {
     }
     if (updateDto.coverImage !== undefined) {
       updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
     }
     
     Object.assign(masterClass, updateDto);
@@ -455,6 +553,14 @@ export class TeachersService {
     
     if (masterClass.videos && masterClass.videos.length > 0) {
       filesToDelete.push(...masterClass.videos);
+    }
+    
+    if (masterClass.files && masterClass.files.length > 0) {
+      filesToDelete.push(...masterClass.files);
+    }
+    
+    if (masterClass.fileUrl) {
+      filesToDelete.push(masterClass.fileUrl);
     }
     
     if (masterClass.coverImage) {
@@ -523,6 +629,19 @@ export class TeachersService {
       throw new NotFoundException('Presentation not found');
     }
     
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.fileUrl !== undefined && updateDto.fileUrl !== presentation.fileUrl && presentation.fileUrl) {
+      filesToDelete.push(presentation.fileUrl);
+    }
+    if (updateDto.coverImage !== undefined && updateDto.coverImage !== presentation.coverImage && presentation.coverImage) {
+      filesToDelete.push(presentation.coverImage);
+    }
+    if (updateDto.previewImage !== undefined && updateDto.previewImage !== presentation.previewImage && presentation.previewImage) {
+      filesToDelete.push(presentation.previewImage);
+    }
+    
     // Нормализуем пути перед сохранением
     if (updateDto.fileUrl !== undefined) {
       updateDto.fileUrl = this.normalizePath(updateDto.fileUrl);
@@ -532,6 +651,11 @@ export class TeachersService {
     }
     if (updateDto.previewImage !== undefined) {
       updateDto.previewImage = this.normalizePath(updateDto.previewImage);
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
     }
     
     Object.assign(presentation, updateDto);
@@ -634,6 +758,19 @@ export class TeachersService {
       throw new NotFoundException('Publication not found');
     }
     
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.fileUrl !== undefined && updateDto.fileUrl !== publication.fileUrl && publication.fileUrl) {
+      filesToDelete.push(publication.fileUrl);
+    }
+    if (updateDto.coverImage !== undefined && updateDto.coverImage !== publication.coverImage && publication.coverImage) {
+      filesToDelete.push(publication.coverImage);
+    }
+    if (updateDto.previewImage !== undefined && updateDto.previewImage !== publication.previewImage && publication.previewImage) {
+      filesToDelete.push(publication.previewImage);
+    }
+    
     // Нормализуем пути перед сохранением
     if (updateDto.fileUrl !== undefined) {
       updateDto.fileUrl = this.normalizePath(updateDto.fileUrl);
@@ -643,6 +780,11 @@ export class TeachersService {
     }
     if (updateDto.previewImage !== undefined) {
       updateDto.previewImage = this.normalizePath(updateDto.previewImage);
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
     }
     
     Object.assign(publication, updateDto);
@@ -723,6 +865,34 @@ export class TeachersService {
     if (!parentSection) {
       throw new NotFoundException('Parent section not found');
     }
+    
+    // Удаляем старые файлы, если они заменяются новыми
+    const filesToDelete: string[] = [];
+    
+    if (updateDto.files !== undefined && updateDto.files !== parentSection.files) {
+      const oldFiles = parentSection.files || [];
+      const newFiles = updateDto.files || [];
+      const removedFiles = oldFiles.filter(file => !newFiles.includes(file));
+      filesToDelete.push(...removedFiles);
+    }
+    
+    if (updateDto.coverImage !== undefined && updateDto.coverImage !== parentSection.coverImage && parentSection.coverImage) {
+      filesToDelete.push(parentSection.coverImage);
+    }
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.files !== undefined) {
+      updateDto.files = this.normalizePaths(updateDto.files);
+    }
+    if (updateDto.coverImage !== undefined) {
+      updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    
+    // Удаляем старые файлы
+    if (filesToDelete.length > 0) {
+      await this.uploadService.deleteMultipleFiles(filesToDelete);
+    }
+    
     Object.assign(parentSection, updateDto);
     return this.parentSectionRepository.save(parentSection);
   }
@@ -927,6 +1097,12 @@ export class TeachersService {
       if (post.videos && post.videos.length > 0) {
         filesToDelete.push(...post.videos);
       }
+      if (post.files && post.files.length > 0) {
+        filesToDelete.push(...post.files);
+      }
+      if (post.fileUrl) {
+        filesToDelete.push(post.fileUrl);
+      }
       if (post.coverImage) {
         filesToDelete.push(post.coverImage);
       }
@@ -940,6 +1116,12 @@ export class TeachersService {
       }
       if (mc.videos && mc.videos.length > 0) {
         filesToDelete.push(...mc.videos);
+      }
+      if (mc.files && mc.files.length > 0) {
+        filesToDelete.push(...mc.files);
+      }
+      if (mc.fileUrl) {
+        filesToDelete.push(mc.fileUrl);
       }
       if (mc.coverImage) {
         filesToDelete.push(mc.coverImage);
@@ -985,7 +1167,7 @@ export class TeachersService {
       }
     });
 
-    // Собираем файлы из LifeInDOU
+    // Собираем файлы из LifeInDOU и папок
     const lifeInDOU = await this.lifeInDOURepository.find({ where: { teacherId: profileId } });
     lifeInDOU.forEach(life => {
       if (life.mediaItems && life.mediaItems.length > 0) {
@@ -993,9 +1175,28 @@ export class TeachersService {
       }
     });
 
-    // Удаляем фото профиля
+    // Собираем файлы из папок (folders)
+    const lifeInDOUIds = lifeInDOU.map(life => life.id);
+    let folders: Folder[] = [];
+    if (lifeInDOUIds.length > 0) {
+      folders = await this.folderRepository
+        .createQueryBuilder('folder')
+        .where('folder.lifeInDOUId IN (:...ids)', { ids: lifeInDOUIds })
+        .getMany();
+      
+      folders.forEach(folder => {
+        if (folder.mediaItems && folder.mediaItems.length > 0) {
+          filesToDelete.push(...folder.mediaItems.map(item => item.url));
+        }
+      });
+    }
+
+    // Удаляем фото и видео профиля
     if (profile.photoUrl) {
       filesToDelete.push(profile.photoUrl);
+    }
+    if (profile.videoUrl) {
+      filesToDelete.push(profile.videoUrl);
     }
 
     // Удаляем все файлы параллельно
@@ -1025,7 +1226,20 @@ export class TeachersService {
     }
 
     if (lifeInDOU.length > 0) {
+      // Сначала удаляем папки, связанные с lifeInDOU
+      if (folders.length > 0) {
+        await this.folderRepository.remove(folders);
+      }
       await this.lifeInDOURepository.remove(lifeInDOU);
+    }
+
+    // Delete reviews
+    const reviews = await this.reviewRepository.find({ 
+      where: { teacher: { id: profileId } },
+      relations: ['teacher'],
+    });
+    if (reviews.length > 0) {
+      await this.reviewRepository.remove(reviews);
     }
 
     // Delete social links

@@ -50,8 +50,8 @@ export class UploadService {
 
     await this.s3Client.send(new PutObjectCommand(commandParams));
 
-    // Возвращаем публичный URL файла
-    return `${this.s3Url}/${this.bucketName}/${filename}`;
+    // Возвращаем относительный путь для хранения в БД: bucket-name/path/to/file
+    return `${this.bucketName}/${filename}`;
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
@@ -73,42 +73,52 @@ export class UploadService {
 
     await this.s3Client.send(new PutObjectCommand(commandParams));
 
-    // Возвращаем публичный URL файла
-    return `${this.s3Url}/${this.bucketName}/${filename}`;
+    // Возвращаем относительный путь для хранения в БД: bucket-name/path/to/file
+    return `${this.bucketName}/${filename}`;
   }
 
-  async deleteFile(fileUrl: string): Promise<void> {
+  async deleteFile(filePath: string): Promise<void> {
     try {
-      // Извлекаем ключ файла из URL
-      // URL формат: https://s3.twcstorage.ru/bucket-name/path/to/file
-      if (!fileUrl || !fileUrl.includes(this.s3Url)) {
-        console.warn('Invalid file URL for deletion:', fileUrl);
+      if (!filePath) {
+        console.warn('Invalid file path for deletion:', filePath);
         return;
       }
 
-      // Убираем базовый URL и извлекаем путь после bucket name
-      const urlWithoutBase = fileUrl.replace(this.s3Url + '/', '');
-      const urlParts = urlWithoutBase.split('/');
+      // filePath может быть:
+      // 1. Относительный путь: bucket-name/path/to/file
+      // 2. Полный URL: https://s3.twcstorage.ru/bucket-name/path/to/file
       
-      // Первая часть - это bucket name, остальное - ключ файла
-      if (urlParts[0] === this.bucketName) {
-        const key = urlParts.slice(1).join('/');
-        await this.s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: this.bucketName,
-            Key: key,
-          }),
-        );
+      let key: string;
+      
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        // Полный URL - извлекаем относительный путь
+        const urlWithoutBase = filePath.replace(this.s3Url + '/', '').replace(this.s3Url, '');
+        const urlParts = urlWithoutBase.split('/');
+        
+        // Первая часть - это bucket name, остальное - ключ файла
+        if (urlParts[0] === this.bucketName) {
+          key = urlParts.slice(1).join('/');
+        } else {
+          // Если bucket name не совпадает, используем весь путь после базового URL
+          key = urlParts.slice(1).join('/');
+        }
       } else {
-        // Если bucket name не совпадает, пытаемся использовать весь путь после базового URL
-        const key = urlParts.join('/');
-        await this.s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: this.bucketName,
-            Key: key,
-          }),
-        );
+        // Относительный путь: bucket-name/path/to/file
+        const pathParts = filePath.split('/');
+        if (pathParts[0] === this.bucketName) {
+          key = pathParts.slice(1).join('/');
+        } else {
+          // Если путь не содержит bucket name, используем как есть
+          key = filePath;
+        }
       }
+
+      await this.s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+        }),
+      );
     } catch (error) {
       console.error('Error deleting file from S3:', error);
       // Не бросаем ошибку, чтобы не ломать процесс, если файл уже удален

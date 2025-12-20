@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TeacherProfile } from './entities/teacher-profile.entity';
@@ -27,9 +28,14 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UsersService } from '../users/users.service';
 import { UploadService } from '../upload/upload.service';
+import { FilePathUtil } from '../common/utils/file-path.util';
 
 @Injectable()
 export class TeachersService {
+  private readonly s3Url: string;
+  private readonly bucketName: string;
+  private readonly oldBucketName = '1f48199c-cfe29ccc-c471-493c-b13e-fadb10f330bc';
+
   constructor(
     @InjectRepository(TeacherProfile)
     private teacherProfileRepository: Repository<TeacherProfile>,
@@ -53,7 +59,150 @@ export class TeachersService {
     private folderRepository: Repository<Folder>,
     private usersService: UsersService,
     private uploadService: UploadService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    // Получаем S3 URL из конфигурации
+    this.s3Url = this.configService.get<string>('S3_URL')
+      || this.configService.get<string>('SWIFT_URL')
+      || 'https://s3.twcstorage.ru';
+    
+    // Получаем текущий bucket name из конфигурации
+    this.bucketName = this.configService.get<string>('S3_BUCKET_NAME')
+      || this.configService.get<string>('SWIFT_BUCKET_NAME')
+      || '79dfaf80-vospitatel';
+  }
+
+  /**
+   * Нормализует путь - извлекает относительный путь из полного URL для сохранения в БД
+   */
+  private normalizePath(path: string | null | undefined): string | undefined {
+    return FilePathUtil.normalizePath(path, this.s3Url);
+  }
+
+  /**
+   * Нормализует массив путей
+   */
+  private normalizePaths(paths: string[] | null | undefined): string[] | undefined {
+    return FilePathUtil.normalizePaths(paths, this.s3Url);
+  }
+
+  /**
+   * Формирует полный URL из относительного пути для возврата в API
+   * Автоматически заменяет старый bucket name на новый из конфигурации
+   */
+  private buildFullUrl(path: string | null | undefined): string | null | undefined {
+    return FilePathUtil.buildFullUrl(path, this.s3Url, this.bucketName, this.oldBucketName);
+  }
+
+  /**
+   * Формирует массив полных URL из относительных путей
+   * Автоматически заменяет старый bucket name на новый из конфигурации
+   */
+  private buildFullUrls(paths: string[] | null | undefined): string[] | null | undefined {
+    return FilePathUtil.buildFullUrls(paths, this.s3Url, this.bucketName, this.oldBucketName);
+  }
+
+  /**
+   * Формирует полные URL в объекте TeacherProfile для возврата в API
+   */
+  private transformProfile(profile: TeacherProfile): TeacherProfile {
+    if (profile.photoUrl) {
+      profile.photoUrl = this.buildFullUrl(profile.photoUrl) || profile.photoUrl;
+    }
+    if (profile.videoUrl) {
+      profile.videoUrl = this.buildFullUrl(profile.videoUrl) || profile.videoUrl;
+    }
+    return profile;
+  }
+
+  /**
+   * Формирует полные URL в объекте Post для возврата в API
+   */
+  private transformPost(post: Post): Post {
+    if (post.images) {
+      post.images = this.buildFullUrls(post.images) || post.images;
+    }
+    if (post.videos) {
+      post.videos = this.buildFullUrls(post.videos) || post.videos;
+    }
+    if (post.files) {
+      post.files = this.buildFullUrls(post.files) || post.files;
+    }
+    if (post.fileUrl) {
+      post.fileUrl = this.buildFullUrl(post.fileUrl) || post.fileUrl;
+    }
+    if (post.coverImage) {
+      post.coverImage = this.buildFullUrl(post.coverImage) || post.coverImage;
+    }
+    return post;
+  }
+
+  /**
+   * Формирует полные URL в объекте MasterClass для возврата в API
+   */
+  private transformMasterClass(masterClass: MasterClass): MasterClass {
+    if (masterClass.images) {
+      masterClass.images = this.buildFullUrls(masterClass.images) || masterClass.images;
+    }
+    if (masterClass.videos) {
+      masterClass.videos = this.buildFullUrls(masterClass.videos) || masterClass.videos;
+    }
+    if (masterClass.files) {
+      masterClass.files = this.buildFullUrls(masterClass.files) || masterClass.files;
+    }
+    if (masterClass.fileUrl) {
+      masterClass.fileUrl = this.buildFullUrl(masterClass.fileUrl) || masterClass.fileUrl;
+    }
+    if (masterClass.coverImage) {
+      masterClass.coverImage = this.buildFullUrl(masterClass.coverImage) || masterClass.coverImage;
+    }
+    return masterClass;
+  }
+
+  /**
+   * Формирует полные URL в объекте Presentation для возврата в API
+   */
+  private transformPresentation(presentation: Presentation): Presentation {
+    if (presentation.fileUrl) {
+      presentation.fileUrl = this.buildFullUrl(presentation.fileUrl) || presentation.fileUrl;
+    }
+    if (presentation.coverImage) {
+      presentation.coverImage = this.buildFullUrl(presentation.coverImage) || presentation.coverImage;
+    }
+    if (presentation.previewImage) {
+      presentation.previewImage = this.buildFullUrl(presentation.previewImage) || presentation.previewImage;
+    }
+    return presentation;
+  }
+
+  /**
+   * Формирует полные URL в объекте Publication для возврата в API
+   */
+  private transformPublication(publication: Publication): Publication {
+    if (publication.fileUrl) {
+      publication.fileUrl = this.buildFullUrl(publication.fileUrl) || publication.fileUrl;
+    }
+    if (publication.coverImage) {
+      publication.coverImage = this.buildFullUrl(publication.coverImage) || publication.coverImage;
+    }
+    if (publication.previewImage) {
+      publication.previewImage = this.buildFullUrl(publication.previewImage) || publication.previewImage;
+    }
+    return publication;
+  }
+
+  /**
+   * Формирует полные URL в объекте LifeInDOU для возврата в API
+   */
+  private transformLifeInDOU(lifeInDOU: LifeInDOU): LifeInDOU {
+    if (lifeInDOU.mediaItems && Array.isArray(lifeInDOU.mediaItems)) {
+      lifeInDOU.mediaItems = lifeInDOU.mediaItems.map(item => ({
+        ...item,
+        url: this.buildFullUrl(item.url) || item.url,
+      }));
+    }
+    return lifeInDOU;
+  }
 
   async getPublicProfile(username: string): Promise<TeacherProfile> {
     const user = await this.usersService.findByUsername(username);
@@ -70,7 +219,7 @@ export class TeachersService {
       throw new NotFoundException('Teacher profile not found');
     }
 
-    return profile;
+    return this.transformProfile(profile);
   }
 
   async getOwnProfile(userId: string): Promise<TeacherProfile> {
@@ -83,7 +232,7 @@ export class TeachersService {
       throw new NotFoundException('Profile not found');
     }
 
-    return profile;
+    return this.transformProfile(profile);
   }
 
   async updateProfile(
@@ -91,8 +240,18 @@ export class TeachersService {
     updateDto: UpdateProfileDto,
   ): Promise<TeacherProfile> {
     const profile = await this.getOwnProfile(userId);
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.photoUrl !== undefined) {
+      updateDto.photoUrl = this.normalizePath(updateDto.photoUrl) || updateDto.photoUrl;
+    }
+    if (updateDto.videoUrl !== undefined) {
+      updateDto.videoUrl = this.normalizePath(updateDto.videoUrl) || updateDto.videoUrl;
+    }
+    
     Object.assign(profile, updateDto);
-    return this.teacherProfileRepository.save(profile);
+    const saved = await this.teacherProfileRepository.save(profile);
+    return this.transformProfile(saved);
   }
 
   // Posts
@@ -113,15 +272,27 @@ export class TeachersService {
       queryBuilder.take(take);
     }
 
-    return queryBuilder.getMany();
+    const posts = await queryBuilder.getMany();
+    return posts.map(post => this.transformPost(post));
   }
 
   async createPost(teacherId: string, createDto: CreatePostDto): Promise<Post> {
-    const post = this.postRepository.create({
+    // Нормализуем пути перед сохранением
+    const normalizedDto = {
       ...createDto,
+      images: this.normalizePaths(createDto.images),
+      videos: this.normalizePaths(createDto.videos),
+      files: this.normalizePaths(createDto.files),
+      fileUrl: this.normalizePath(createDto.fileUrl),
+      coverImage: this.normalizePath(createDto.coverImage),
+    };
+    
+    const post = this.postRepository.create({
+      ...normalizedDto,
       teacherId,
     });
-    return this.postRepository.save(post);
+    const saved = await this.postRepository.save(post);
+    return this.transformPost(saved);
   }
 
   async updatePost(
@@ -135,8 +306,27 @@ export class TeachersService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.images !== undefined) {
+      updateDto.images = this.normalizePaths(updateDto.images);
+    }
+    if (updateDto.videos !== undefined) {
+      updateDto.videos = this.normalizePaths(updateDto.videos);
+    }
+    if (updateDto.files !== undefined) {
+      updateDto.files = this.normalizePaths(updateDto.files);
+    }
+    if (updateDto.fileUrl !== undefined) {
+      updateDto.fileUrl = this.normalizePath(updateDto.fileUrl);
+    }
+    if (updateDto.coverImage !== undefined) {
+      updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    
     Object.assign(post, updateDto);
-    return this.postRepository.save(post);
+    const saved = await this.postRepository.save(post);
+    return this.transformPost(saved);
   }
 
   async deletePost(postId: string, teacherId: string): Promise<void> {
@@ -188,18 +378,30 @@ export class TeachersService {
       queryBuilder.take(take);
     }
 
-    return queryBuilder.getMany();
+    const masterClasses = await queryBuilder.getMany();
+    return masterClasses.map(mc => this.transformMasterClass(mc));
   }
 
   async createMasterClass(
     teacherId: string,
     createDto: CreateMasterClassDto,
   ): Promise<MasterClass> {
-    const masterClass = this.masterClassRepository.create({
+    // Нормализуем пути перед сохранением
+    const normalizedDto = {
       ...createDto,
+      images: this.normalizePaths(createDto.images),
+      videos: this.normalizePaths(createDto.videos),
+      files: this.normalizePaths(createDto.files),
+      fileUrl: this.normalizePath(createDto.fileUrl),
+      coverImage: this.normalizePath(createDto.coverImage),
+    };
+    
+    const masterClass = this.masterClassRepository.create({
+      ...normalizedDto,
       teacherId,
     });
-    return this.masterClassRepository.save(masterClass);
+    const saved = await this.masterClassRepository.save(masterClass);
+    return this.transformMasterClass(saved);
   }
 
   async updateMasterClass(
@@ -213,8 +415,27 @@ export class TeachersService {
     if (!masterClass) {
       throw new NotFoundException('Master class not found');
     }
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.images !== undefined) {
+      updateDto.images = this.normalizePaths(updateDto.images);
+    }
+    if (updateDto.videos !== undefined) {
+      updateDto.videos = this.normalizePaths(updateDto.videos);
+    }
+    if (updateDto.files !== undefined) {
+      updateDto.files = this.normalizePaths(updateDto.files);
+    }
+    if (updateDto.fileUrl !== undefined) {
+      updateDto.fileUrl = this.normalizePath(updateDto.fileUrl);
+    }
+    if (updateDto.coverImage !== undefined) {
+      updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    
     Object.assign(masterClass, updateDto);
-    return this.masterClassRepository.save(masterClass);
+    const saved = await this.masterClassRepository.save(masterClass);
+    return this.transformMasterClass(saved);
   }
 
   async deleteMasterClass(id: string, teacherId: string): Promise<void> {
@@ -266,18 +487,28 @@ export class TeachersService {
       queryBuilder.take(take);
     }
 
-    return queryBuilder.getMany();
+    const presentations = await queryBuilder.getMany();
+    return presentations.map(p => this.transformPresentation(p));
   }
 
   async createPresentation(
     teacherId: string,
     createDto: CreatePresentationDto,
   ): Promise<Presentation> {
-    const presentation = this.presentationRepository.create({
+    // Нормализуем пути перед сохранением
+    const normalizedDto = {
       ...createDto,
+      fileUrl: this.normalizePath(createDto.fileUrl),
+      coverImage: this.normalizePath(createDto.coverImage),
+      previewImage: this.normalizePath(createDto.previewImage),
+    };
+    
+    const presentation = this.presentationRepository.create({
+      ...normalizedDto,
       teacherId,
     });
-    return this.presentationRepository.save(presentation);
+    const saved = await this.presentationRepository.save(presentation);
+    return this.transformPresentation(saved);
   }
 
   async updatePresentation(
@@ -291,8 +522,21 @@ export class TeachersService {
     if (!presentation) {
       throw new NotFoundException('Presentation not found');
     }
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.fileUrl !== undefined) {
+      updateDto.fileUrl = this.normalizePath(updateDto.fileUrl);
+    }
+    if (updateDto.coverImage !== undefined) {
+      updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    if (updateDto.previewImage !== undefined) {
+      updateDto.previewImage = this.normalizePath(updateDto.previewImage);
+    }
+    
     Object.assign(presentation, updateDto);
-    return this.presentationRepository.save(presentation);
+    const saved = await this.presentationRepository.save(presentation);
+    return this.transformPresentation(saved);
   }
 
   async deletePresentation(id: string, teacherId: string): Promise<void> {
@@ -354,18 +598,28 @@ export class TeachersService {
       queryBuilder.take(take);
     }
 
-    return queryBuilder.getMany();
+    const publications = await queryBuilder.getMany();
+    return publications.map(p => this.transformPublication(p));
   }
 
   async createPublication(
     teacherId: string,
     createDto: CreatePublicationDto,
   ): Promise<Publication> {
-    const publication = this.publicationRepository.create({
+    // Нормализуем пути перед сохранением
+    const normalizedDto = {
       ...createDto,
+      fileUrl: this.normalizePath(createDto.fileUrl),
+      coverImage: this.normalizePath(createDto.coverImage),
+      previewImage: this.normalizePath(createDto.previewImage),
+    };
+    
+    const publication = this.publicationRepository.create({
+      ...normalizedDto,
       teacherId,
     });
-    return this.publicationRepository.save(publication);
+    const saved = await this.publicationRepository.save(publication);
+    return this.transformPublication(saved);
   }
 
   async updatePublication(
@@ -379,8 +633,21 @@ export class TeachersService {
     if (!publication) {
       throw new NotFoundException('Publication not found');
     }
+    
+    // Нормализуем пути перед сохранением
+    if (updateDto.fileUrl !== undefined) {
+      updateDto.fileUrl = this.normalizePath(updateDto.fileUrl);
+    }
+    if (updateDto.coverImage !== undefined) {
+      updateDto.coverImage = this.normalizePath(updateDto.coverImage);
+    }
+    if (updateDto.previewImage !== undefined) {
+      updateDto.previewImage = this.normalizePath(updateDto.previewImage);
+    }
+    
     Object.assign(publication, updateDto);
-    return this.publicationRepository.save(publication);
+    const saved = await this.publicationRepository.save(publication);
+    return this.transformPublication(saved);
   }
 
   async deletePublication(id: string, teacherId: string): Promise<void> {
@@ -502,7 +769,7 @@ export class TeachersService {
       lifeInDOU = await this.lifeInDOURepository.save(lifeInDOU);
     }
     
-    return lifeInDOU;
+    return this.transformLifeInDOU(lifeInDOU);
   }
 
   async addMediaToLifeInDOU(
@@ -513,19 +780,26 @@ export class TeachersService {
       where: { teacherId },
     });
     
+    // Нормализуем URL перед сохранением
+    const normalizedMediaItem = {
+      ...mediaItem,
+      url: this.normalizePath(mediaItem.url) || mediaItem.url,
+    };
+    
     // Если объекта нет, создаем новый
     if (!lifeInDOU) {
       lifeInDOU = this.lifeInDOURepository.create({
         teacherId,
-        mediaItems: [mediaItem],
+        mediaItems: [normalizedMediaItem],
       });
     } else {
       // Добавляем новый медиа элемент к существующим
       const existingItems = lifeInDOU.mediaItems || [];
-      lifeInDOU.mediaItems = [...existingItems, mediaItem];
+      lifeInDOU.mediaItems = [...existingItems, normalizedMediaItem];
     }
     
-    return this.lifeInDOURepository.save(lifeInDOU);
+    const saved = await this.lifeInDOURepository.save(lifeInDOU);
+    return this.transformLifeInDOU(saved);
   }
 
   async removeMediaFromLifeInDOU(
@@ -628,9 +902,12 @@ export class TeachersService {
 
   // Get all teachers (public)
   async getAllTeachers(): Promise<TeacherProfile[]> {
-    return this.teacherProfileRepository.find({
+    const profiles = await this.teacherProfileRepository.find({
       relations: ['user', 'socialLinks'],
     });
+    
+    // Формируем полные URL для каждого профиля
+    return profiles.map(profile => this.transformProfile(profile));
   }
 
   // Delete profile and all related data

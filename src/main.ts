@@ -62,10 +62,42 @@ async function bootstrap() {
     await seedDatabase(dataSource);
   } catch (error) {
     console.error('Error seeding database:', error);
+    // Не прерываем запуск приложения, если seeding не удался
   }
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: http://0.0.0.0:${port}`);
+
+  // Graceful shutdown
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`Received ${signal}, starting graceful shutdown...`);
+    try {
+      await app.close();
+      console.log('Application closed successfully');
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  // Обработка сигналов завершения
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  // Обработка необработанных ошибок
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    gracefulShutdown('uncaughtException');
+  });
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('Failed to start application:', error);
+  process.exit(1);
+});

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
+import { FilePathUtil } from '../common/utils/file-path.util';
 
 @Injectable()
 export class UploadService {
@@ -75,6 +76,69 @@ export class UploadService {
 
     // Возвращаем относительный путь для хранения в БД: bucket-name/path/to/file
     return `${this.bucketName}/${filename}`;
+  }
+
+  /**
+   * Получает файл из S3 хранилища
+   */
+  async getFile(filePath: string): Promise<{ buffer: Buffer; contentType: string }> {
+    try {
+      // Извлекаем относительный путь, если передан полный URL
+      let relativePath = FilePathUtil.extractRelativePath(filePath, this.s3Url) || filePath;
+      
+      // Заменяем старый bucket name на новый, если нужно
+      const oldBucketName = '1f48199c-cfe29ccc-c471-493c-b13e-fadb10f330bc';
+      if (relativePath.startsWith(oldBucketName + '/')) {
+        relativePath = relativePath.replace(oldBucketName + '/', this.bucketName + '/');
+      }
+      
+      // Убираем bucket name из пути для получения ключа файла в S3
+      let key = relativePath;
+      if (key.startsWith(this.bucketName + '/')) {
+        key = key.substring(this.bucketName.length + 1);
+      }
+
+      console.log(`Getting file from S3: bucket=${this.bucketName}, key=${key}`);
+
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const response = await this.s3Client.send(command);
+      
+      if (!response.Body) {
+        throw new Error('File body is empty');
+      }
+
+      // Читаем поток данных в буфер
+      const chunks: Buffer[] = [];
+      const stream = response.Body as any;
+      
+      // Преобразуем поток в буфер
+      if (stream instanceof Buffer) {
+        // Если это уже буфер
+        const buffer = stream;
+        const contentType = response.ContentType || 'application/octet-stream';
+        console.log(`File loaded successfully: ${buffer.length} bytes, contentType=${contentType}`);
+        return { buffer, contentType };
+      } else {
+        // Если это поток, читаем его
+        for await (const chunk of stream) {
+          chunks.push(Buffer.from(chunk));
+        }
+      }
+      
+      const buffer = Buffer.concat(chunks);
+      const contentType = response.ContentType || 'application/octet-stream';
+
+      console.log(`File loaded successfully: ${buffer.length} bytes, contentType=${contentType}`);
+
+      return { buffer, contentType };
+    } catch (error) {
+      console.error(`Error getting file from S3: ${error.message}`, error);
+      throw new Error(`Failed to get file from S3: ${error.message}`);
+    }
   }
 
   async deleteFile(filePath: string): Promise<void> {

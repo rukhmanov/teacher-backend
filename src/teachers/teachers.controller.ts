@@ -112,6 +112,19 @@ export class TeachersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me/certificates')
+  async getOwnCertificates(
+    @Request() req,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getCertificates(profile.id, skipNum, takeNum);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me/parents')
   async getOwnParentSections(
     @Request() req,
@@ -314,6 +327,18 @@ export class TeachersController {
     const skipNum = skip ? parseInt(skip, 10) : undefined;
     const takeNum = take ? parseInt(take, 10) : undefined;
     return this.teachersService.getPublications(profile.id, skipNum, takeNum, type);
+  }
+
+  @Get(':username/certificates')
+  async getCertificates(
+    @Param('username') username: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
+    const profile = await this.teachersService.getPublicProfile(username);
+    const skipNum = skip ? parseInt(skip, 10) : undefined;
+    const takeNum = take ? parseInt(take, 10) : undefined;
+    return this.teachersService.getCertificates(profile.id, skipNum, takeNum);
   }
 
   // Parent Sections
@@ -527,6 +552,7 @@ export class TeachersController {
     return this.teachersService.getFoldersByTeacherId(teacher.id);
   }
 }
+
 
 
 

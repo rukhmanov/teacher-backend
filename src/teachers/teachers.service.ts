@@ -726,6 +726,29 @@ export class TeachersService {
     return publications.map(p => this.transformPublication(p));
   }
 
+  // Certificates
+  async getCertificates(
+    teacherId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<Publication[]> {
+    const queryBuilder = this.publicationRepository
+      .createQueryBuilder('publication')
+      .where('publication.teacherId = :teacherId', { teacherId })
+      .andWhere('publication.type = :type', { type: 'certificate' })
+      .orderBy('publication.createdAt', 'DESC');
+
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    const certificates = await queryBuilder.getMany();
+    return certificates.map(c => this.transformPublication(c));
+  }
+
   async createPublication(
     teacherId: string,
     createDto: CreatePublicationDto,

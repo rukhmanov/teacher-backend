@@ -17,3 +17,4 @@ export class MoveMediaDto {
   @IsOptional()
   targetFolderId?: string; // null или undefined означает перемещение в основной раздел
 }
+

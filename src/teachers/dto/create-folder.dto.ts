@@ -9,3 +9,4 @@ export class CreateFolderDto {
   @IsArray()
   mediaItems?: Array<{ type: 'photo' | 'video'; url: string; caption?: string }>;
 }
+

@@ -27,3 +27,4 @@ export class CreatePublicationDto {
   @IsString()
   type?: string; // 'publication' или 'certificate'
 }
+

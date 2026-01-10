@@ -48,3 +48,4 @@ export class Publication {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

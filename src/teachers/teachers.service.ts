@@ -1135,13 +1135,16 @@ export class TeachersService {
       throw new NotFoundException('Media item not found');
     }
     
+    // Нормализуем URL для поиска (в БД хранятся нормализованные пути)
+    const normalizedUrl = this.normalizePath(mediaUrl) || mediaUrl;
+    
     // Удаляем файл из хранилища только если указано
     if (deleteFile) {
       await this.uploadService.deleteFile(mediaUrl);
     }
     
-    // Удаляем медиа элемент по URL
-    const filteredItems = lifeInDOU.mediaItems.filter(item => item.url !== mediaUrl);
+    // Удаляем медиа элемент по URL (сравниваем с нормализованным URL)
+    const filteredItems = lifeInDOU.mediaItems.filter(item => item.url !== normalizedUrl);
     
     // Если медиа элементов не осталось, устанавливаем null
     if (filteredItems.length === 0) {
@@ -1489,8 +1492,14 @@ export class TeachersService {
       throw new NotFoundException('Folder not found');
     }
 
+    // Нормализуем URL перед сохранением
+    const normalizedMediaItem = {
+      ...mediaItem,
+      url: this.normalizePath(mediaItem.url) || mediaItem.url,
+    };
+
     const existingItems = folder.mediaItems || [];
-    folder.mediaItems = [...existingItems, mediaItem];
+    folder.mediaItems = [...existingItems, normalizedMediaItem];
 
     const saved = await this.folderRepository.save(folder);
     return this.transformFolder(saved);
@@ -1505,12 +1514,15 @@ export class TeachersService {
       throw new NotFoundException('Media item not found');
     }
 
+    // Нормализуем URL для поиска (в БД хранятся нормализованные пути)
+    const normalizedUrl = this.normalizePath(mediaUrl) || mediaUrl;
+
     // Удаляем файл из хранилища только если указано
     if (deleteFile) {
       await this.uploadService.deleteFile(mediaUrl);
     }
 
-    const filteredItems = folder.mediaItems.filter(item => item.url !== mediaUrl);
+    const filteredItems = folder.mediaItems.filter(item => item.url !== normalizedUrl);
 
     if (filteredItems.length === 0) {
       folder.mediaItems = null;
@@ -1570,6 +1582,9 @@ export class TeachersService {
     mediaUrl: string,
     folderId: string | null,
   ): Promise<{ type: 'photo' | 'video'; url: string; caption?: string } | null> {
+    // Нормализуем URL для поиска (в БД хранятся нормализованные пути)
+    const normalizedUrl = this.normalizePath(mediaUrl) || mediaUrl;
+    
     if (folderId) {
       const folder = await this.folderRepository.findOne({
         where: { id: folderId },
@@ -1577,7 +1592,7 @@ export class TeachersService {
       if (!folder || !folder.mediaItems) {
         return null;
       }
-      return folder.mediaItems.find(item => item.url === mediaUrl) || null;
+      return folder.mediaItems.find(item => item.url === normalizedUrl) || null;
     } else {
       const lifeInDOU = await this.lifeInDOURepository.findOne({
         where: { teacherId },
@@ -1585,7 +1600,7 @@ export class TeachersService {
       if (!lifeInDOU || !lifeInDOU.mediaItems) {
         return null;
       }
-      return lifeInDOU.mediaItems.find(item => item.url === mediaUrl) || null;
+      return lifeInDOU.mediaItems.find(item => item.url === normalizedUrl) || null;
     }
   }
 

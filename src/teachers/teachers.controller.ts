@@ -483,6 +483,22 @@ export class TeachersController {
     return this.teachersService.removeMediaFromLifeInDOU(profile.id, body.url);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('me/life/move-media')
+  async moveMedia(
+    @Request() req,
+    @Body() body: MoveMediaDto & { sourceFolderId?: string | null; targetFolderId?: string | null },
+  ) {
+    const profile = await this.teachersService.getOwnProfile(req.user.id);
+    await this.teachersService.moveMedia(
+      profile.id,
+      body.url,
+      body.sourceFolderId || null,
+      body.targetFolderId || null,
+    );
+    return { message: 'Media moved successfully' };
+  }
+
   // Social Links
   @Get(':username/social-links')
   async getSocialLinks(@Param('username') username: string) {
@@ -589,22 +605,6 @@ export class TeachersController {
     @Body() body: { url: string },
   ) {
     return this.teachersService.removeMediaFromFolder(id, body.url);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('me/life/move-media')
-  async moveMedia(
-    @Request() req,
-    @Body() body: MoveMediaDto & { sourceFolderId?: string | null; targetFolderId?: string | null },
-  ) {
-    const profile = await this.teachersService.getOwnProfile(req.user.id);
-    await this.teachersService.moveMedia(
-      profile.id,
-      body.url,
-      body.sourceFolderId || null,
-      body.targetFolderId || null,
-    );
-    return { message: 'Media moved successfully' };
   }
 
   @UseGuards(JwtAuthGuard)
